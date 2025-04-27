@@ -44,9 +44,9 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="<?= base_url('master/client/view/' . $client['id']) ?>" class="text-blue-600 hover:text-blue-900 mr-3">Detail</a>
-                            <a href="<?= base_url('master/client/edit/' . $client['id']) ?>" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                            <a href="<?= base_url('master/client/delete/' . $client['id']) ?>" 
+                            <a href="<?= base_url('master/client/view/' . $client['client_id']) ?>" class="text-blue-600 hover:text-blue-900 mr-3">Detail</a>
+                            <a href="<?= base_url('master/client/edit/' . $client['client_id']) ?>" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                            <a href="<?= base_url('master/client/delete/' . $client['client_id']) ?>" 
                                class="text-red-600 hover:text-red-900"
                                onclick="return confirm('Apakah Anda yakin ingin menghapus client ini?')">
                                 Hapus

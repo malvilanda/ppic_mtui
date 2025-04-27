@@ -6,7 +6,7 @@
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-semibold">Detail Client</h2>
             <div class="space-x-2">
-                <a href="<?= base_url('master/client/edit/' . $client['id']) ?>" 
+                <a href="<?= base_url('master/client/edit/' . $client['client_id']) ?>" 
                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
                     Edit Client
                 </a>

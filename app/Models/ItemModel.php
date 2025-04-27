@@ -17,7 +17,8 @@ class ItemModel extends Model
         'name',
         'stock',
         'minimum_stock',
-        'updated_at'
+        'updated_at',
+        'kategori_tabung'
     ];
 
     // Validation rules

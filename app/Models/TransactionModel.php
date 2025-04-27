@@ -26,7 +26,8 @@ class TransactionModel extends Model
         'delivery_order',
         'delivery_address',
         'receiver_name',
-        'receiver_phone'
+        'receiver_phone',
+        'kategori_tabung'
     ];
 
     protected $useTimestamps = true;
@@ -39,7 +40,8 @@ class TransactionModel extends Model
         'type' => 'required|in_list[masuk,keluar]',
         'quantity' => 'required|numeric|greater_than[0]',
         'user_id' => 'required|numeric',
-        'created_by' => 'required'
+        'created_by' => 'required',
+        'kategori_tabung' => 'required|in_list[A,B]'
     ];
 
     protected $validationMessages = [
@@ -66,6 +68,10 @@ class TransactionModel extends Model
         ],
         'created_by' => [
             'required' => 'PIC transaksi harus diisi'
+        ],
+        'kategori_tabung' => [
+            'required' => 'Kategori tabung harus dipilih',
+            'in_list' => 'Kategori tabung harus A atau B'
         ]
     ];
 
@@ -250,34 +256,21 @@ class TransactionModel extends Model
 
     public function getTransactionDetail($id)
     {
-        try {
-            $builder = $this->db->table('transactions t')
-                ->select('
-                    t.*,
-                    i.name as item_name,
-                    w.name as warehouse_name,
-                    u.name as pic_name,
-                    IFNULL(c.name, "-") as client_name,
-                    IFNULL(c.code, "-") as client_code
-                ')
-                ->join('items i', 'i.id = t.item_id')
-                ->join('warehouses w', 'w.id = t.warehouse_id')
-                ->join('users u', 'u.id = t.user_id')
-                ->join('clients c', 'c.client_id = t.client_id', 'left')
-                ->where('t.id', $id);
-
-            $result = $builder->get()->getRowArray();
-            
-            if (!$result) {
-                log_message('error', 'Transaction not found with ID: ' . $id);
-                return null;
-            }
-
-            return $result;
-        } catch (\Exception $e) {
-            log_message('error', 'Error in getTransactionDetail: ' . $e->getMessage());
-            throw $e;
-        }
+        return $this->select('
+            transactions.*,
+            items.name as item_name,
+            items.type as item_type,
+            clients.name as client_name,
+            clients.code as client_code,
+            clients.pic_name as pic_name,
+            warehouses.name as warehouse_name,
+            transactions.kategori_tabung
+        ')
+        ->join('items', 'items.id = transactions.item_id')
+        ->join('clients', 'clients.client_id = transactions.client_id', 'left')
+        ->join('warehouses', 'warehouses.id = transactions.warehouse_id')
+        ->where('transactions.id', $id)
+        ->first();
     }
 
     // public function getTabungTransactions($filters = [])
@@ -461,7 +454,8 @@ class TransactionModel extends Model
                     w.name as warehouse_name,
                     t.status,
                     IFNULL(c.name, "-") as client_name,
-                    IFNULL(c.code, "-") as client_code
+                    IFNULL(c.code, "-") as client_code,
+                    t.kategori_tabung
                 ')
                 ->join('items i', 'i.id = t.item_id')
                 ->join('warehouses w', 'w.id = t.warehouse_id')

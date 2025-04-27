@@ -17,7 +17,7 @@ class ClientModel extends Model
 
     // Validation rules
     protected $validationRules = [
-        'code' => 'required|min_length[3]|is_unique[clients.code,client_id,{client_id}]',
+        'code' => 'required|min_length[3]|is_unique[clients.code,id,{id}]',
         'name' => 'required|min_length[3]',
         'address' => 'required',
         'phone' => 'required|numeric',
@@ -57,7 +57,7 @@ class ClientModel extends Model
      */
     public function generateCode()
     {
-        $lastClient = $this->orderBy('client_id', 'DESC')->first();
+        $lastClient = $this->orderBy('id', 'DESC')->first();
         
         if (!$lastClient) {
             return 'CLT001';
@@ -84,7 +84,7 @@ class ClientModel extends Model
         // Format alamat sebagai array of objects
         return [
             [
-                'client_id' => $client['client_id'],
+                'id' => $client['client_id'],
                 'address' => $client['address'],
                 'is_main' => true
             ]

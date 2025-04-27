@@ -26,29 +26,6 @@
             </div>
         </div>
 
-        <!-- Ringkasan Stok Tabung -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <!-- Tabung 3kg -->
-            <div class="bg-blue-50 p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-blue-800">Tabung 3kg</h3>
-                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['3kg']['current_stock'] - $tabung_summary['3kg']['total_keluar'] ?? 0) ?></p>
-            </div>
-            <!-- Tabung 5kg -->
-            <div class="bg-green-50 p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-green-800">Tabung 5kg</h3>
-                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['5kg']['current_stock'] - $tabung_summary['5kg']['total_keluar'] ?? 0) ?></p>
-            </div>
-            <!-- Tabung 12kg -->
-            <div class="bg-purple-50 p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-purple-800">Tabung 12kg</h3>
-                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['12kg']['current_stock'] - $tabung_summary['12kg']['total_keluar'] ?? 0) ?></p>
-            </div>
-            <!-- Tabung 15kg -->
-            <div class="bg-yellow-50 p-4 rounded-lg">
-                <h3 class="text-sm font-medium text-yellow-800">Tabung 15kg</h3>
-                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['15kg']['current_stock'] - $tabung_summary['15kg']['total_keluar'] ?? 0) ?></p>
-            </div>
-        </div>
 
         <!-- Tabel Stok -->
         <div class="overflow-x-auto">

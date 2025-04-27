@@ -10,6 +10,16 @@
         
         <form action="<?= base_url('transaksi/tabung/save') ?>" method="POST" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Kategori Tabung -->
+                <div id="categorySection">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Kategori Tabung</label>
+                    <select name="kategori_tabung" id="categorySelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        <option value="">Pilih Kategori Tabung</option>
+                        <option value="A">Tabung A</option>
+                        <option value="B">Tabung B</option>
+                    </select>
+                </div>
+
                 <!-- Jenis Tabung -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Tabung</label>
@@ -192,6 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const addressSection = document.getElementById('addressSection');
     const deliveryDetailSection = document.getElementById('deliveryDetailSection');
     const doSection = document.getElementById('doSection');
+    const categorySection = document.getElementById('categorySection');
     const clientSelect = document.querySelector('select[name="client_id"]');
     const deliveryAddress = document.getElementById('deliveryAddress');
     const addressLoading = document.getElementById('addressLoading');
@@ -207,14 +218,36 @@ document.addEventListener('DOMContentLoaded', function() {
         addressSection.classList.toggle('hidden', !isOutgoing);
         deliveryDetailSection.classList.toggle('hidden', !isOutgoing);
         doSection.classList.toggle('hidden', !isOutgoing);
+        categorySection.classList.toggle('hidden', !isOutgoing);
         
         clientSelect.required = isOutgoing;
         deliveryAddress.required = isOutgoing;
+        document.getElementById('categorySelect').required = isOutgoing;
         
         if (isOutgoing) {
             checkStock();
+            handleCompanyNameDisplay();
         } else {
             stockWarning.classList.add('hidden');
+        }
+    }
+
+    // Function to handle company name display in delivery order
+    function handleCompanyNameDisplay() {
+        const categorySelect = document.getElementById('categorySelect');
+        const clientSelect = document.getElementById('clientSelect');
+        const selectedClient = clientSelect.options[clientSelect.selectedIndex];
+        
+        if (categorySelect.value === 'B' && selectedClient) {
+            // Simpan nama perusahaan asli di data attribute
+            if (!selectedClient.dataset.originalName) {
+                selectedClient.dataset.originalName = selectedClient.textContent;
+            }
+            // Hapus nama perusahaan dari tampilan
+            selectedClient.textContent = selectedClient.dataset.code;
+        } else if (selectedClient && selectedClient.dataset.originalName) {
+            // Kembalikan nama perusahaan jika ada
+            selectedClient.textContent = selectedClient.dataset.originalName;
         }
     }
 
@@ -233,9 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
         stockWarning.classList.add('hidden');
         return true;
     }
-
-    // Initial toggle
-    toggleSections();
 
     // Listen for changes
     transactionType.addEventListener('change', toggleSections);
@@ -370,5 +400,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (transactionType.value === 'keluar') {
         generateDONumber();
     }
+
+    // Listen for category changes
+    document.getElementById('categorySelect').addEventListener('change', function() {
+        if (transactionType.value === 'keluar') {
+            handleCompanyNameDisplay();
+        }
+    });
+
+    // Listen for client changes
+    clientSelect.addEventListener('change', function() {
+        if (transactionType.value === 'keluar') {
+            handleCompanyNameDisplay();
+        }
+    });
+
+    // Initial toggle
+    toggleSections();
 });
 </script> 

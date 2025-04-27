@@ -118,7 +118,8 @@ class Transaksi extends BaseController
                 'quantity' => $this->request->getPost('quantity'),
                 'notes' => $this->request->getPost('notes'),
                 'user_id' => session()->get('user_id'),
-                'created_by' => $this->request->getPost('created_by')
+                'created_by' => $this->request->getPost('created_by'),
+                'kategori_tabung' => $this->request->getPost('kategori_tabung') ?? 'A'
             ];
 
             // Validasi stok untuk transaksi keluar
@@ -262,14 +263,31 @@ class Transaksi extends BaseController
                 return redirect()->back()->with('error', 'Bukan merupakan transaksi keluar');
             }
 
+            // Cek kategori tabung
+            $item = $this->itemModel->find($transaction['item_id']);
+            if (!$item) {
+                log_message('error', 'Item not found for transaction ID: ' . $id);
+                return redirect()->back()->with('error', 'Data item tidak ditemukan');
+            }
+
+            // Default show company data
+            $showCompanyData = true;
+            
+            // Jika item memiliki kategori dan kategori adalah B, sembunyikan data perusahaan
+            if (isset($item['kategori_tabung']) && $item['kategori_tabung'] === 'B') {
+                $showCompanyData = false;
+            }
+
             $data = [
                 'title' => 'Detail Delivery Order',
                 'transaction' => $transaction,
+                'item' => $item,
+                'showCompanyData' => $showCompanyData,
                 'company' => [
-                    'name' => 'PT. Gas Cylinder Indonesia',
-                    'address' => 'Jl. Industri No. 123, Kawasan Industri',
-                    'phone' => '(021) 1234567',
-                    'email' => 'info@gasindo.com'
+                    'name' => 'PT. Maju Teknik Utama Indonesia',
+                    'address' => 'Jl. Raya Narogong Km. 18.5, Ds. Pasir Angin Kec. Cileungsi Bogor',
+                    'phone' => ' 021-22950122',
+                    'email' => 'marketing.support@mtu-indonesia.com'
                 ]
             ];
 
@@ -291,25 +309,49 @@ class Transaksi extends BaseController
     public function printDeliveryOrder($id)
     {
         try {
+            log_message('debug', 'Mencoba mengambil data transaksi dengan ID: ' . $id);
+            
             $transaction = $this->transactionModel->getTransactionDetail($id);
+            log_message('debug', 'Data transaksi yang diambil: ' . json_encode($transaction));
             
             if (!$transaction) {
+                log_message('error', 'Transaksi tidak ditemukan dengan ID: ' . $id);
                 return redirect()->back()->with('error', 'Delivery order tidak ditemukan');
             }
 
             if ($transaction['type'] !== 'keluar') {
+                log_message('error', 'Tipe transaksi tidak valid: ' . $transaction['type']);
                 return redirect()->back()->with('error', 'Bukan merupakan transaksi keluar');
+            }
+
+            // Cek kategori tabung
+            $item = $this->itemModel->find($transaction['item_id']);
+            if (!$item) {
+                log_message('error', 'Item tidak ditemukan untuk transaksi ID: ' . $id);
+                return redirect()->back()->with('error', 'Data item tidak ditemukan');
+            }
+
+            // Default show company data
+            $showCompanyData = true;
+            
+            // Jika item memiliki kategori dan kategori adalah B, sembunyikan data perusahaan
+            if (isset($transaction['kategori_tabung']) && $transaction['kategori_tabung'] === 'B') {
+                $showCompanyData = false;
             }
 
             $data = [
                 'transaction' => $transaction,
+                'item' => $item,
+                'showCompanyData' => $showCompanyData,
                 'company' => [
-                    'name' => 'PT. Gas Cylinder Indonesia',
-                    'address' => 'Jl. Industri No. 123, Kawasan Industri',
-                    'phone' => '(021) 1234567',
-                    'email' => 'info@gasindo.com'
+                    'name' => 'PT. Maju Teknik Utama Indonesia',
+                    'address' => 'Jl. Raya Narogong Km. 18.5, Ds. Pasir Angin Kec. Cileungsi Bogor',
+                    'phone' => ' 021-22950122',
+                    'email' => 'marketing.support@mtu-indonesia.com'
                 ]
             ];
+
+            log_message('debug', 'Data yang akan dikirim ke view: ' . json_encode($data));
 
             // Load HTML content
             $html = view('transaksi/delivery_order', $data);
@@ -326,6 +368,7 @@ class Transaksi extends BaseController
 
         } catch (\Exception $e) {
             log_message('error', 'Error in printDeliveryOrder: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat mencetak delivery order: ' . $e->getMessage());
         }
     }

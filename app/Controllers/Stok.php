@@ -69,7 +69,25 @@ class Stok extends BaseController
         $data = [
             'items' => $this->itemModel->getBahanBakuItems(10, $currentPage), // 10 items per page
             'pager' => $this->itemModel->pager,
-            'currentPage' => $currentPage
+            'currentPage' => $currentPage,
+            'tabung_summary' => [
+                '3kg' => [
+                    'current_stock' => $this->itemModel->getStokByJenis('3'),
+                    'total_keluar' => 0
+                ],
+                '5kg' => [
+                    'current_stock' => $this->itemModel->getStokByJenis('5'),
+                    'total_keluar' => 0
+                ],
+                '12kg' => [
+                    'current_stock' => $this->itemModel->getStokByJenis('12'),
+                    'total_keluar' => 0
+                ],
+                '15kg' => [
+                    'current_stock' => $this->itemModel->getStokByJenis('15'),
+                    'total_keluar' => 0
+                ]
+            ]
         ];
         
         return view('stok/bahan_baku', $data);

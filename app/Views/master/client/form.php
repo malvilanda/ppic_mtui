@@ -14,7 +14,7 @@
             </div>
         <?php endif; ?>
 
-        <form action="<?= isset($client) ? base_url('master/client/update/' . $client['id']) : base_url('master/client/store') ?>" 
+        <form action="<?= isset($client) ? base_url('master/client/update/' . $client['client_id']) : base_url('master/client/store') ?>" 
               method="POST" 
               class="space-y-6">
             
