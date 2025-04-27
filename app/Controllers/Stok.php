@@ -35,16 +35,28 @@ class Stok extends BaseController
 
     public function tabung()
     {
+        // Get filter parameters
+        $month = $this->request->getGet('month') ?? date('m');
+        $year = $this->request->getGet('year') ?? date('Y');
+        
+        // Format date for filtering
+        $startDate = "$year-$month-01";
+        $endDate = date('Y-m-t', strtotime($startDate));
+        
         // Ambil data tabung dari tabel items menggunakan $table_tabung
         $data['items'] = $this->itemModel->builder($this->table_tabung)
             ->select("$this->table_tabung.*, 
-                     COALESCE(SUM(transactions.quantity), 0) as total_keluar")
-            ->join('transactions', "transactions.item_id = $this->table_tabung.id", 'left')
+                     COALESCE(SUM(CASE WHEN transactions.transaction_date >= '$startDate' AND transactions.transaction_date <= '$endDate' THEN transactions.quantity ELSE 0 END), 0) as total_keluar")
+            ->join('transactions', "transactions.item_id = $this->table_tabung.id AND transactions.type = 'keluar'", 'left')
             ->where("$this->table_tabung.name LIKE", '%3kg%')
             ->orWhere("$this->table_tabung.name LIKE", '%12kg%')
             ->groupBy("$this->table_tabung.id")
             ->get()
             ->getResultArray();
+            
+        // Add filter data to view
+        $data['current_month'] = $month;
+        $data['current_year'] = $year;
 
         return view('stok/tabung', $data);
     }

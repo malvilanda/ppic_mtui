@@ -1,14 +1,15 @@
 <?= $this->include('dashboard/header') ?>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-semibold">Stok Bahan Baku</h2>
-            <a href="<?= base_url('transaksi/bahan-baku') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+            <!-- <a href="<?= base_url('transaksi/bahan-baku') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                 + Transaksi Baru
-            </a>
+            </a> -->
         </div>
 
         <!-- Filter Kategori -->
@@ -22,6 +23,30 @@
                        id="searchInput" 
                        class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm" 
                        placeholder="Cari nama bahan baku...">
+            </div>
+        </div>
+
+        <!-- Ringkasan Stok Tabung -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <!-- Tabung 3kg -->
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-blue-800">Tabung 3kg</h3>
+                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['3kg']['current_stock'] - $tabung_summary['3kg']['total_keluar'] ?? 0) ?></p>
+            </div>
+            <!-- Tabung 5kg -->
+            <div class="bg-green-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-green-800">Tabung 5kg</h3>
+                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['5kg']['current_stock'] - $tabung_summary['5kg']['total_keluar'] ?? 0) ?></p>
+            </div>
+            <!-- Tabung 12kg -->
+            <div class="bg-purple-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-purple-800">Tabung 12kg</h3>
+                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['12kg']['current_stock'] - $tabung_summary['12kg']['total_keluar'] ?? 0) ?></p>
+            </div>
+            <!-- Tabung 15kg -->
+            <div class="bg-yellow-50 p-4 rounded-lg">
+                <h3 class="text-sm font-medium text-yellow-800">Tabung 15kg</h3>
+                <p class="text-2xl font-semibold"><?= number_format($tabung_summary['15kg']['current_stock'] - $tabung_summary['15kg']['total_keluar'] ?? 0) ?></p>
             </div>
         </div>
 
@@ -279,7 +304,11 @@ function updateItem(event) {
     
     // Validasi input
     if (isNaN(stock) || isNaN(minStock) || stock < 0 || minStock < 0) {
-        alert('Stok dan minimum stok harus berupa angka positif');
+        Swal.fire({
+            icon: 'error',
+            title: 'Input Tidak Valid',
+            text: 'Stok dan minimum stok harus berupa angka positif'
+        });
         return;
     }
     
@@ -304,20 +333,37 @@ function updateItem(event) {
     .then(response => response.json())
     .then(data => {
         console.log('Response:', data); // Debug log
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
         if (data.success) {
-            alert('Data berhasil diupdate');
-            window.location.reload();
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Data berhasil diupdate',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.reload();
+            });
         } else {
-            alert(data.message || 'Gagal mengupdate data');
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: data.message || 'Gagal mengupdate data'
+            });
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan sistem');
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Terjadi kesalahan sistem'
+        });
     });
 }
 </script>

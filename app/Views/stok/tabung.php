@@ -3,10 +3,52 @@
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-semibold">Stok Tabung Gas</h2>
-            <a href="<?= base_url('transaksi/tabung') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+            <div>
+                <h2 class="text-2xl font-semibold">Stok Tabung Gas</h2>
+                <p class="text-gray-500">
+                    Periode: <?= date('F Y', mktime(0, 0, 0, isset($current_month) ? $current_month : date('m'), 1, isset($current_year) ? $current_year : date('Y'))) ?>
+                </p>
+            </div>
+            <!-- <a href="<?= base_url('transaksi/tabung') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                 + Transaksi Baru
-            </a>
+            </a> -->
+        </div>
+
+        <!-- Filter Bulan dan Tahun -->
+        <div class="mb-6">
+            <form id="filterForm" class="flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="month" class="block text-sm font-medium text-gray-700 mb-1">Bulan</label>
+                    <select id="month" name="month" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <?php
+                        $currentMonth = isset($current_month) ? $current_month : date('m');
+                        for ($i = 1; $i <= 12; $i++) {
+                            $month = str_pad($i, 2, '0', STR_PAD_LEFT);
+                            $selected = $month == $currentMonth ? 'selected' : '';
+                            $monthName = date('F', mktime(0, 0, 0, $i, 1));
+                            echo "<option value=\"$month\" $selected>$monthName</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label for="year" class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
+                    <select id="year" name="year" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <?php
+                        $currentYear = isset($current_year) ? $current_year : date('Y');
+                        for ($i = $currentYear - 2; $i <= $currentYear; $i++) {
+                            $selected = $i == $currentYear ? 'selected' : '';
+                            echo "<option value=\"$i\" $selected>$i</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        <i class="fas fa-filter mr-1"></i> Filter
+                    </button>
+                </div>
+            </form>
         </div>
 
         <!-- Ringkasan Stok -->
@@ -101,50 +143,73 @@
 
     <!-- Grafik Stok -->
     <div class="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-xl font-semibold mb-4">Grafik Perbandingan Stok</h3>
+        <h3 class="text-xl font-semibold mb-4">
+            Grafik Perbandingan Stok
+            <span class="text-gray-500 font-normal text-base ml-2">
+                Periode: <?= date('F Y', mktime(0, 0, 0, isset($current_month) ? $current_month : date('m'), 1, isset($current_year) ? $current_year : date('Y'))) ?>
+            </span>
+        </h3>
         <canvas id="stockChart" height="300"></canvas>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('stockChart').getContext('2d');
-    const items = <?= json_encode($items) ?>;
+    // Inisialisasi grafik
+    updateChart();
     
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: items.map(item => item.name),
-            datasets: [
-                {
-                    label: 'Stok Saat Ini',
-                    data: items.map(item => item.stock),
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    borderColor: 'rgb(59, 130, 246)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Minimum Stok',
-                    data: items.map(item => item.minimum_stock),
-                    backgroundColor: 'rgba(239, 68, 68, 0.5)',
-                    borderColor: 'rgb(239, 68, 68)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+    // Filter handler
+    document.getElementById('filterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateData();
+    });
+    
+    function updateData() {
+        const month = document.getElementById('month').value;
+        const year = document.getElementById('year').value;
+        
+        window.location.href = `<?= base_url('stok/tabung') ?>?month=${month}&year=${year}`;
+    }
+    
+    function updateChart() {
+        const ctx = document.getElementById('stockChart').getContext('2d');
+        const items = <?= json_encode($items) ?>;
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: items.map(item => item.name),
+                datasets: [
+                    {
+                        label: 'Stok Saat Ini',
+                        data: items.map(item => item.stock - item.total_keluar),
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Minimum Stok',
+                        data: items.map(item => item.minimum_stock),
+                        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        borderWidth: 1
+                    }
+                ]
             },
-            plugins: {
-                legend: {
-                    position: 'top'
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 });
 </script> 

@@ -74,6 +74,8 @@ $routes->group('master', ['filter' => 'auth'], function($routes) {
     $routes->get('bahan-baku', 'Master::bahanBaku');
     $routes->post('tabung/store', 'Master::storeTabung');
     $routes->post('bahan-baku/store', 'Master::storeBahanBaku');
+    $routes->post('store-items-part', 'Master::storeItemsPart');
+    $routes->get('items-part/delete/(:num)', 'Master::deleteItemsPart/$1');
     $routes->get('type/delete/(:num)', 'Master::deleteType/$1');
 });
 

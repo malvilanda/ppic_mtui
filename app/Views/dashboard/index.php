@@ -38,7 +38,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-gray-500">Stok Tabung 12kg</p>
-                    <p class="text-2xl font-semibold"><?= number_format($tabung_summary['12kg']['current_stock'] ?? 0) ?></p>
+                    <p class="text-2xl font-semibold"><?= number_format($tabung_summary['12kg']['sisa_stok'] ?? 0) ?></p>
                 </div>
             </div>
         </div>
@@ -51,7 +51,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-gray-500">Stok Tabung 5kg</p>
-                    <p class="text-2xl font-semibold"><?= number_format($tabung_summary['5kg']['current_stock'] ?? 0) ?></p>
+                    <p class="text-2xl font-semibold"><?= number_format($tabung_summary['5kg']['sisa_stok'] ?? 0) ?></p>
                 </div>
             </div>
         </div>
@@ -64,7 +64,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-gray-500">Stok Tabung 15kg</p>
-                    <p class="text-2xl font-semibold"><?= number_format($tabung_summary['15kg']['current_stock'] ?? 0) ?></p>
+                    <p class="text-2xl font-semibold"><?= number_format($tabung_summary['15kg']['sisa_stok'] ?? 0) ?></p>
                 </div>
             </div>
         </div>
