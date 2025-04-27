@@ -455,7 +455,8 @@ class TransactionModel extends Model
                     t.status,
                     IFNULL(c.name, "-") as client_name,
                     IFNULL(c.code, "-") as client_code,
-                    t.kategori_tabung
+                    t.kategori_tabung,
+                    t.delivery_order
                 ')
                 ->join('items i', 'i.id = t.item_id')
                 ->join('warehouses w', 'w.id = t.warehouse_id')

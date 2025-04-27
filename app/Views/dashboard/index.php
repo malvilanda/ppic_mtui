@@ -185,13 +185,13 @@
                         <div class="bg-red-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Total Keluar</p>
                             <p class="text-2xl font-semibold text-red-600">
-                                <?= number_format($tabung_summary['3kg']['total_keluar'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['3kg']['total_keluar'] ?? 0) - ($tabung_summary['3kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Sisa Stok</p>
                             <p class="text-2xl font-semibold text-blue-600">
-                                <?= number_format($tabung_summary['3kg']['sisa_stok'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['3kg']['sisa_stok'] ?? 0) + ($tabung_summary['3kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                     </div>
@@ -212,13 +212,13 @@
                         <div class="bg-red-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Total Keluar</p>
                             <p class="text-2xl font-semibold text-red-600">
-                                <?= number_format($tabung_summary['12kg']['total_keluar'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['12kg']['total_keluar'] ?? 0) + ($tabung_summary['12kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Stok Saat Ini</p>
                             <p class="text-2xl font-semibold text-blue-600">
-                                <?= number_format($tabung_summary['12kg']['current_stock'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['12kg']['current_stock'] ?? 0) + ($tabung_summary['12kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                     </div>
@@ -239,13 +239,13 @@
                         <div class="bg-red-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Total Keluar</p>
                             <p class="text-2xl font-semibold text-red-600">
-                                <?= number_format($tabung_summary['5kg']['total_keluar'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['5kg']['total_keluar'] ?? 0) + ($tabung_summary['5kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Sisa Stok</p>
                             <p class="text-2xl font-semibold text-blue-600">
-                                <?= number_format($tabung_summary['5kg']['sisa_stok'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['5kg']['sisa_stok'] ?? 0) + ($tabung_summary['5kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                     </div>
@@ -266,13 +266,13 @@
                         <div class="bg-red-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Total Keluar</p>
                             <p class="text-2xl font-semibold text-red-600">
-                                <?= number_format($tabung_summary['15kg']['total_keluar'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['15kg']['total_keluar'] ?? 0) + ($tabung_summary['15kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                         <div class="bg-blue-50 p-4 rounded-lg">
                             <p class="text-sm text-gray-500">Stok Saat Ini</p>
                             <p class="text-2xl font-semibold text-blue-600">
-                                <?= number_format($tabung_summary['15kg']['current_stock'] ?? 0) ?>
+                                <?= number_format(($tabung_summary['15kg']['current_stock'] ?? 0) + ($tabung_summary['15kg']['stok_bergerak'] ?? 0)) ?>
                             </p>
                         </div>
                     </div>

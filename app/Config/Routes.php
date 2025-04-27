@@ -87,6 +87,10 @@ $routes->get('delivery-order/(:num)', 'DeliveryOrder::view/$1');
 $routes->get('delivery-order/(:num)/edit', 'DeliveryOrder::edit/$1');
 $routes->put('delivery-order/(:num)', 'DeliveryOrder::update/$1');
 $routes->delete('delivery-order/(:num)', 'DeliveryOrder::delete/$1');
+$routes->get('approval/delivery', 'Approval::delivery');
+$routes->get('delivery-approval/view/(:num)', 'Approval::view/$1');
+$routes->post('delivery-approval/approve/(:num)', 'Approval::approve/$1');
+$routes->post('delivery-approval/reject/(:num)', 'Approval::reject/$1');
 
 // Routes untuk Laporan
 $routes->group('laporan', ['namespace' => 'App\Controllers'], function($routes) {

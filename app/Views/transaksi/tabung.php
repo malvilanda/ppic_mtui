@@ -145,45 +145,58 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead>
                     <tr class="bg-gray-50">
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipe</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaksi</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gudang</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Surat jalan</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[120px]">Delivery Order</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[160px]">Tanggal</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[200px]">Tipe</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[100px]">Transaksi</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[200px]">Client</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[250px]">Lokasi</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[150px]">Gudang</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[100px]">Jumlah</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[120px]">Status</th>
+                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[150px]">Surat jalan</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php if(empty($transactions)): ?>
                         <tr>
-                            <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                            <td colspan="10" class="px-8 py-6 text-center text-gray-500">
                                 Tidak ada data transaksi
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($transactions as $trans): ?>
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap"><?= date('d/m/Y H:i:s', strtotime($trans['transaction_date'])) ?></td>
-                            <td class="px-6 py-4"><?= $trans['item_name'] ?></td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full <?= $trans['type'] === 'masuk' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                        <tr class="<?= ($trans['status'] ?? '') === 'pending' ? 'bg-yellow-50' : (($trans['status'] ?? '') === 'approve' ? 'bg-green-50' : '') ?>">
+                            <td class="px-8 py-6 whitespace-nowrap"><?= $trans['delivery_order'] ?></td>
+                            <td class="px-8 py-6 whitespace-nowrap"><?= date('d/m/Y H:i:s', strtotime($trans['transaction_date'])) ?></td>
+                            <td class="px-8 py-6"><?= $trans['item_name'] ?></td>
+                            <td class="px-8 py-6">
+                                <span class="px-3 py-2 text-xs font-semibold rounded-full <?= $trans['type'] === 'masuk' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
                                     <?= ucfirst($trans['type']) ?>
                                 </span>
                             </td>
-                            <td class="px-6 py-4"><?= $trans['client_name'] ?></td>
-                            <td class="px-6 py-4"><?= $trans['delivery_address'] ?? '-' ?></td>
-                            <td class="px-6 py-4"><?= $trans['warehouse_name'] ?></td>
-                            <td class="px-6 py-4"><?= number_format($trans['quantity']) ?></td>
-                            <td class="px-6 py-4"><?= $trans['status'] ?? '-' ?></td>
-                            <td class="px-6 py-4">
-                                <a href="/transaksi/delivery-order/<?= $trans['id'] ?>" 
-                                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                                    <i class="fas fa-print mr-2"></i>
-                                    Cetak
-                                </a>
+                            <td class="px-8 py-6"><?= $trans['client_name'] ?></td>
+                            <td class="px-8 py-6"><?= $trans['delivery_address'] ?? '-' ?></td>
+                            <td class="px-8 py-6"><?= $trans['warehouse_name'] ?></td>
+                            <td class="px-8 py-6 text-right"><?= number_format($trans['quantity']) ?></td>
+                            <td class="px-8 py-6">
+                                <span class="px-3 py-2 text-xs font-semibold rounded-full <?= ($trans['status'] ?? '') === 'pending' ? 'bg-red-100 text-red-800' : (($trans['status'] ?? '') === 'approve' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800') ?>">
+                                    <?= $trans['status'] ?? '-' ?>
+                                </span>
+                            </td>
+                            <td class="px-8 py-6">
+                                <?php if (($trans['status'] ?? '') === 'pending'): ?>
+                                    <button disabled class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-gray-200 rounded-md cursor-not-allowed">
+                                        <i class="fas fa-print mr-2"></i>
+                                        Cetak
+                                    </button>
+                                <?php else: ?>
+                                    <a href="/transaksi/delivery-order/<?= $trans['id'] ?>" 
+                                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                        <i class="fas fa-print mr-2"></i>
+                                        Cetak
+                                    </a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>

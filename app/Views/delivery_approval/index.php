@@ -31,7 +31,7 @@
                             </a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <?= date('d M Y', strtotime($approval['requested_at'])) ?>
+                            <?= date('d M Y', strtotime($approval['transaction_date'])) ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <?= $approval['item_name'] ?>
@@ -96,7 +96,7 @@
                             </a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <?= date('d M Y', strtotime($approval['approved_at'])) ?>
+                            <?= date('d M Y', strtotime($approval['transaction_date'])) ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <?= $approval['item_name'] ?>
@@ -107,14 +107,18 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <?php
                             $statusClass = match($approval['status']) {
-                                'approved' => 'bg-green-100 text-green-800',
-                                'rejected' => 'bg-red-100 text-red-800',
+                                'completed' => 'bg-green-100 text-green-800',
+                                'cancelled' => 'bg-red-100 text-red-800',
+                                'pending' => 'bg-yellow-100 text-yellow-800',
+                                null => 'bg-gray-100 text-gray-800',
                                 default => 'bg-gray-100 text-gray-800'
                             };
                             $statusText = match($approval['status']) {
-                                'approved' => 'Disetujui',
-                                'rejected' => 'Ditolak',
-                                default => 'Unknown'
+                                'completed' => 'Disetujui',
+                                'cancelled' => 'Ditolak',
+                                'pending' => 'Menunggu',
+                                null => 'Menunggu',
+                                default => 'Menunggu'
                             };
                             ?>
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $statusClass ?>">

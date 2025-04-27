@@ -28,10 +28,22 @@ class Dashboard extends Controller
         // Get raw materials summary
         $bahan_baku_summary = $itemModel->getBahanBakuSummary();
         
+        // Get tabung summary with stok bergerak
+        $tabung_summary = $transactionModel->getTabungSummary();
+        
+        // Adjust sisa stok and total keluar based on stok bergerak
+        foreach (['3kg', '5kg', '12kg', '15kg'] as $type) {
+            if (isset($tabung_summary[$type])) {
+                $stok_bergerak = $tabung_summary[$type]['stok_bergerak'] ?? 0;
+                $tabung_summary[$type]['sisa_stok'] = ($tabung_summary[$type]['sisa_stok'] ?? 0) + $stok_bergerak;
+                $tabung_summary[$type]['total_keluar'] = ($tabung_summary[$type]['total_keluar'] ?? 0) - $stok_bergerak;
+            }
+        }
+        
         $data = [
             'title' => 'Dashboard',
             'stock_summary' => $itemModel->getStockSummary(),
-            'tabung_summary' => $transactionModel->getTabungSummary(),
+            'tabung_summary' => $tabung_summary,
             'total_transactions' => $transactionModel->getTotalTransactions(),
             'recent_transactions' => $transactionModel->getRecentTransactions(),
             'incoming_transactions' => $incoming_transactions,

@@ -152,13 +152,31 @@
                         </div> -->
 
                         <!-- Delivery Approval -->
-                        <?php if (session()->get('role') === 'manager'): ?>
+                        <?php 
+                        // Debug role user
+                        $userRole = session()->get('role');
+                        ?>
+                        <?php if (in_array($userRole, ['manager', 'admin'])): ?>
                         <div class="nav-item">
-                            <a href="<?= base_url('delivery-approval') ?>" 
-                                class="nav-link <?= strpos(current_url(), base_url('delivery-approval')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium">
-                                <i class="fas fa-clipboard-check mr-2"></i>
-                                Persetujuan Surat Jalan
-                            </a>
+                            <div class="relative nav-dropdown">
+                                <button class="nav-link <?= strpos(current_url(), base_url('approval')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium" id="approval-menu-button">
+                                    <i class="fas fa-clipboard-check mr-2"></i>
+                                    Persetujuan
+                                    <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                    </svg>
+                                </button>
+                                <div class="nav-dropdown-content absolute z-10 mt-0 w-48 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5" id="approval-menu">
+                                    <a href="<?= base_url('approval/delivery') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-truck mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Persetujuan Surat Jalan
+                                    </a>
+                                    <a href="<?= base_url('approval/transaksi') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-exchange-alt mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Persetujuan Transaksi
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                         <?php endif; ?>
 
@@ -336,12 +354,28 @@
                 </div>
 
                 <!-- Delivery Approval Mobile -->
-                <?php if (session()->get('role') === 'manager'): ?>
-                <a href="<?= base_url('delivery-approval') ?>" 
-                    class="<?= strpos(current_url(), base_url('delivery-approval')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                    <i class="fas fa-clipboard-check mr-2"></i>
-                    Persetujuan Surat Jalan
-                </a>
+                <?php if (in_array($userRole, ['manager', 'admin'])): ?>
+                <div class="mobile-dropdown">
+                    <button class="w-full text-left <?= strpos(current_url(), base_url('approval')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> flex items-center justify-between pl-3 pr-4 py-2 border-l-4 text-base font-medium" data-target="approval-mobile-menu">
+                        <div class="flex items-center">
+                            <i class="fas fa-clipboard-check mr-2"></i>
+                            Persetujuan
+                        </div>
+                        <svg class="h-5 w-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                        </svg>
+                    </button>
+                    <div class="hidden bg-gray-50" id="approval-mobile-menu">
+                        <a href="<?= base_url('approval/delivery') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-truck mr-2"></i>
+                            Persetujuan Surat Jalan
+                        </a>
+                        <a href="<?= base_url('approval/transaksi') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-exchange-alt mr-2"></i>
+                            Persetujuan Transaksi
+                        </a>
+                    </div>
+                </div>
                 <?php endif; ?>
 
                 <!-- Master Data Mobile -->
@@ -473,7 +507,7 @@
         }
 
         // Desktop dropdowns
-        ['stok', 'transaksi', 'master', 'delivery-order', 'administrator'].forEach(menu => {
+        ['stok', 'transaksi', 'master', 'delivery-order', 'administrator', 'approval'].forEach(menu => {
             const button = document.getElementById(`${menu}-menu-button`);
             const dropdown = document.getElementById(`${menu}-menu`);
             

@@ -3,7 +3,7 @@
 <?= $this->section('content') ?>
 <div class="container mx-auto px-4 py-8">
     <div class="mb-6">
-        <a href="<?= base_url('delivery-approval') ?>" class="text-blue-600 hover:text-blue-800">
+        <a href="<?= base_url('approval/delivery') ?>" class="text-blue-600 hover:text-blue-800">
             <i class="fas fa-arrow-left mr-2"></i>Kembali
         </a>
     </div>
@@ -20,7 +20,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Tanggal Permintaan</label>
-                        <p class="mt-1 text-sm text-gray-900"><?= date('d M Y H:i', strtotime($approval['requested_at'])) ?></p>
+                        <p class="mt-1 text-sm text-gray-900"><?= date('d M Y H:i', strtotime($approval['transaction_date'])) ?></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Status</label>
@@ -47,7 +47,7 @@
                     <?php if ($approval['status'] !== 'pending'): ?>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Tanggal <?= $approval['status'] === 'approved' ? 'Persetujuan' : 'Penolakan' ?></label>
-                        <p class="mt-1 text-sm text-gray-900"><?= date('d M Y H:i', strtotime($approval['approved_at'])) ?></p>
+                        <p class="mt-1 text-sm text-gray-900"><?= isset($approval['approved_at']) ? date('d M Y H:i', strtotime($approval['approved_at'])) : '-' ?></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Catatan</label>
@@ -80,7 +80,7 @@
                     <?php if ($approval['status'] !== 'pending'): ?>
                     <div>
                         <label class="block text-sm font-medium text-gray-700"><?= $approval['status'] === 'approved' ? 'Disetujui' : 'Ditolak' ?> Oleh</label>
-                        <p class="mt-1 text-sm text-gray-900"><?= $approval['approver_name'] ?></p>
+                        <p class="mt-1 text-sm text-gray-900"><?= $approval['approver_name'] ?? '-' ?></p>
                     </div>
                     <?php endif; ?>
                 </div>
