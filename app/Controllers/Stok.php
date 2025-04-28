@@ -5,12 +5,16 @@ namespace App\Controllers;
 use App\Models\ItemModel;
 use App\Models\StockOpnameModel;
 use App\Models\WarehouseModel;
+use App\Models\OpnameBahanModel;
+use App\Models\BahanBakuModel;
 
 class Stok extends BaseController
 {
     protected $itemModel;
     protected $stockOpnameModel;
     protected $warehouseModel;
+    protected $opnameBahanModel;
+    protected $bahanBakuModel;
     protected $table_tabung = 'items';
 
     public function __construct()
@@ -18,6 +22,8 @@ class Stok extends BaseController
         $this->itemModel = new ItemModel();
         $this->stockOpnameModel = new StockOpnameModel();
         $this->warehouseModel = new WarehouseModel();
+        $this->opnameBahanModel = new OpnameBahanModel();
+        $this->bahanBakuModel = new BahanBakuModel();
     }
 
     public function perGudang()
@@ -179,45 +185,64 @@ class Stok extends BaseController
     {
         $data = [
             'title' => 'Stok Opname Bahan Baku',
-            'items' => $this->itemModel->findAll(),
-            'warehouses' => $this->warehouseModel->findAll(),
-            'opname_history' => $this->stockOpnameModel->getOpnameHistory('bahan_baku')
+            'opname_bahan' => $this->opnameBahanModel->getOpnameBahan(),
+            'bahan_baku' => $this->bahanBakuModel->findAll()
         ];
 
         return view('stok/opname_bahan_baku', $data);
     }
 
-    public function saveOpname()
+    public function get_stok_bahan($id)
     {
-        // Validasi input
-        $rules = [
-            'item_id' => 'required',
-            'warehouse_id' => 'required',
-            'actual_stock' => 'required|numeric',
-            'notes' => 'permit_empty'
-        ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        $bahan = $this->bahanBakuModel->find($id);
+        
+        if ($bahan) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'stok' => $bahan['stok']
+            ]);
         }
 
-        // Simpan data opname
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'Data bahan tidak ditemukan'
+        ]);
+    }
+
+    public function simpan_opname_bahan()
+    {
+        // Hitung selisih
+        $stok_sistem = $this->request->getVar('stok_sistem');
+        $stok_fisik = $this->request->getVar('stok_fisik');
+        $selisih = $this->opnameBahanModel->hitungSelisih($stok_sistem, $stok_fisik);
+
+        // Data untuk disimpan
         $data = [
-            'item_id' => $this->request->getPost('item_id'),
-            'warehouse_id' => $this->request->getPost('warehouse_id'),
-            'system_stock' => $this->request->getPost('system_stock'),
-            'actual_stock' => $this->request->getPost('actual_stock'),
-            'difference' => $this->request->getPost('actual_stock') - $this->request->getPost('system_stock'),
-            'notes' => $this->request->getPost('notes'),
-            'created_by' => $this->request->getPost('created_by'),
-            'opname_date' => date('Y-m-d H:i:s')
+            'tanggal' => $this->request->getVar('tanggal'),
+            'bahan_id' => $this->request->getVar('bahan_id'),
+            'stok_sistem' => $stok_sistem,
+            'stok_fisik' => $stok_fisik,
+            'selisih' => $selisih,
+            'keterangan' => $this->request->getVar('keterangan')
         ];
 
-        $this->stockOpnameModel->insert($data);
+        // Simpan data opname
+        $this->opnameBahanModel->save($data);
 
-        // Update stok di tabel items
-        $this->itemModel->update($data['item_id'], ['stock' => $data['actual_stock']]);
+        // Update stok bahan baku
+        $bahan = $this->bahanBakuModel->find($data['bahan_id']);
+        $this->bahanBakuModel->update($data['bahan_id'], [
+            'stok' => $stok_fisik
+        ]);
 
-        return redirect()->back()->with('success', 'Data opname berhasil disimpan');
+        session()->setFlashdata('pesan', 'Data opname berhasil ditambahkan.');
+        return redirect()->to('/stok/opname_bahan_baku');
+    }
+
+    public function hapus_opname_bahan($id)
+    {
+        $this->opnameBahanModel->delete($id);
+        session()->setFlashdata('pesan', 'Data opname berhasil dihapus.');
+        return redirect()->to('/stok/opname_bahan_baku');
     }
 } 

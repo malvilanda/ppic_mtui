@@ -107,3 +107,5 @@ $routes->group('laporan', ['namespace' => 'App\Controllers'], function($routes) 
 $routes->get('administrator/users', 'Administrator::users', ['filter' => 'role:admin,supervisor,manager']);
 $routes->get('administrator/users/add', 'Administrator::add_user', ['filter' => 'role:admin,supervisor,manager']);
 $routes->post('administrator/users/save', 'Administrator::save_user', ['filter' => 'role:admin,supervisor,manager']);
+
+$routes->get('api/stock-data', 'Api::getStockData');
