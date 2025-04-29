@@ -1,37 +1,52 @@
 <?= $this->include('dashboard/header') ?>
 
+<!-- Tambahkan CSS Select2 -->
+<link href="<?= base_url('assets/select2/select2.min.css') ?>" rel="stylesheet" />
+<link href="<?= base_url('assets/select2/select2-bootstrap-5-theme.min.css') ?>" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-2xl font-semibold mb-6">Transaksi Bahan Baku</h2>
         
-        <form action="<?= base_url('transaksi/bahan-baku/save') ?>" method="POST" class="space-y-6">
+        <form action="<?= base_url('transaksi/bahan-baku/save') ?>" method="POST" class="space-y-6" id="transactionForm">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Jenis Bahan Baku -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Bahan Baku</label>
-                    <select name="item_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select name="item_id" id="itemSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                         <option value="">Pilih Bahan Baku</option>
                         <?php foreach ($items as $item): ?>
-                            <?php if ($item['type'] === 'bahan_baku'): ?>
-                                <option value="<?= $item['id'] ?>"><?= $item['name'] ?> (Stok: <?= $item['stock'] ?>)</option>
-                            <?php endif; ?>
+                            <option value="<?= $item['id'] ?>" data-stock="<?= $item['stock'] ?>"><?= $item['name'] ?> (Stok: <?= $item['stock'] ?>)</option>
                         <?php endforeach; ?>
                     </select>
+                    <p id="stockWarning" class="hidden mt-2 text-sm text-red-600">Stok tidak mencukupi untuk transaksi keluar</p>
                 </div>
 
                 <!-- Jenis Transaksi -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi</label>
-                    <select name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select name="type" id="transactionType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                         <option value="masuk">Masuk</option>
                         <option value="keluar">Keluar</option>
+                    </select>
+                </div>
+
+                <!-- Unit (muncul saat transaksi keluar) -->
+                <div id="unitField" style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Unit Pengambil</label>
+                    <select name="unit_id" id="unitSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Pilih Unit</option>
+                        <?php foreach ($units as $unit): ?>
+                            <option value="<?= $unit['id'] ?>"><?= $unit['name'] ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
                 <!-- Gudang -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Gudang</label>
-                    <select name="warehouse_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <select name="warehouse_id" id="warehouseSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                         <option value="">Pilih Gudang</option>
                         <?php foreach ($warehouses as $warehouse): ?>
                             <option value="<?= $warehouse['id'] ?>"><?= $warehouse['name'] ?></option>
@@ -42,7 +57,7 @@
                 <!-- Jumlah -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah</label>
-                    <input type="number" name="quantity" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    <input type="number" name="quantity" id="quantityInput" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                 </div>
 
                 <!-- Catatan -->
@@ -98,19 +113,94 @@
     </div>
 </div>
 
+<!-- Script -->
+<script src="<?= base_url('assets/select2/jquery-3.7.1.min.js') ?>"></script>
+<script src="<?= base_url('assets/select2/select2.min.js') ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Validasi form sebelum submit
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        const itemId = form.querySelector('[name="item_id"]').value;
-        const quantity = form.querySelector('[name="quantity"]').value;
-        const warehouseId = form.querySelector('[name="warehouse_id"]').value;
+    const form = document.getElementById('transactionForm');
+    const transactionType = document.getElementById('transactionType');
+    const unitField = document.getElementById('unitField');
+    const unitSelect = document.getElementById('unitSelect');
+    const itemSelect = document.getElementById('itemSelect');
+    const stockWarning = document.getElementById('stockWarning');
+    const quantityInput = document.getElementById('quantityInput');
 
-        if (!itemId || !quantity || !warehouseId) {
-            e.preventDefault();
-            alert('Mohon lengkapi semua field yang diperlukan');
+    // Inisialisasi Select2
+    $('#itemSelect').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Pilih Bahan Baku',
+        allowClear: true,
+        width: '100%'
+    });
+
+    $('#warehouseSelect').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Pilih Gudang',
+        allowClear: true,
+        width: '100%'
+    });
+
+    $('#unitSelect').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Pilih Unit',
+        allowClear: true,
+        width: '100%'
+    });
+
+    // Function to toggle unit field
+    function toggleUnitField() {
+        const isOutgoing = transactionType.value === 'keluar';
+        unitField.style.display = isOutgoing ? 'block' : 'none';
+        unitSelect.required = isOutgoing;
+        
+        if (isOutgoing) {
+            checkStock();
+        } else {
+            stockWarning.classList.add('hidden');
+        }
+    }
+
+    // Function to check stock availability
+    function checkStock() {
+        if (transactionType.value === 'keluar' && itemSelect.value) {
+            const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+            const currentStock = parseInt(selectedOption.dataset.stock);
+            const quantity = parseInt(quantityInput.value) || 0;
+            
+            if (quantity > currentStock) {
+                stockWarning.classList.remove('hidden');
+                return false;
+            }
+        }
+        stockWarning.classList.add('hidden');
+        return true;
+    }
+
+    // Event listeners
+    transactionType.addEventListener('change', toggleUnitField);
+    itemSelect.addEventListener('change', checkStock);
+    quantityInput.addEventListener('input', checkStock);
+
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        if (transactionType.value === 'keluar') {
+            if (!checkStock()) {
+                e.preventDefault();
+                alert('Stok tidak mencukupi untuk transaksi keluar');
+                return;
+            }
+            
+            if (!unitSelect.value) {
+                e.preventDefault();
+                alert('Unit pengambil harus dipilih untuk transaksi keluar');
+                unitSelect.focus();
+                return;
+            }
         }
     });
+
+    // Initial toggle
+    toggleUnitField();
 });
 </script> 

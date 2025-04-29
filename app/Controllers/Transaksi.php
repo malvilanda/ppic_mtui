@@ -6,6 +6,8 @@ use App\Models\ItemModel;
 use App\Models\WarehouseModel;
 use App\Models\TransactionModel;
 use App\Models\ClientModel;
+use App\Models\UnitModel;
+use App\Models\TransactionBahanBakuModel;
 use CodeIgniter\Database\ConnectionInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -16,8 +18,10 @@ class Transaksi extends BaseController
     protected $warehouseModel;
     protected $transactionModel;
     protected $clientModel;
+    protected $unitModel;
     protected $db;
     protected $dompdf;
+    protected $transactionBahanBakuModel;
 
     public function __construct()
     {
@@ -25,7 +29,9 @@ class Transaksi extends BaseController
         $this->warehouseModel = new WarehouseModel();
         $this->transactionModel = new TransactionModel();
         $this->clientModel = new ClientModel();
+        $this->unitModel = new UnitModel();
         $this->db = \Config\Database::connect();
+        $this->transactionBahanBakuModel = new TransactionBahanBakuModel();
 
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -59,12 +65,12 @@ class Transaksi extends BaseController
     public function bahanBaku()
     {
         $data = [
-            'title' => 'Transaksi Bahan Baku',
             'items' => $this->itemModel->findAll(),
             'warehouses' => $this->warehouseModel->findAll(),
-            'transactions' => $this->transactionModel->getRecentTransactions(20)
+            'units' => $this->unitModel->findAll(),
+            'transactions' => $this->transactionBahanBakuModel->getTransactions()
         ];
-
+        
         return view('transaksi/bahan_baku', $data);
     }
 
@@ -375,31 +381,24 @@ class Transaksi extends BaseController
 
     public function saveBahanBaku()
     {
-        $rules = [
-            'item_id' => 'required|numeric',
-            'warehouse_id' => 'required|numeric',
-            'type' => 'required|in_list[masuk,keluar]',
-            'quantity' => 'required|numeric|greater_than[0]'
-        ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-
         $data = [
             'item_id' => $this->request->getPost('item_id'),
             'warehouse_id' => $this->request->getPost('warehouse_id'),
-            'user_id' => session()->get('user_id'), // Sesuaikan dengan sistem autentikasi Anda
+            'user_id' => session()->get('user_id'),
             'type' => $this->request->getPost('type'),
             'quantity' => $this->request->getPost('quantity'),
-            'notes' => $this->request->getPost('notes')
+            'notes' => $this->request->getPost('notes'),
+            'unit_id' => $this->request->getPost('unit_id')
         ];
 
-        if ($this->transactionModel->addTransaction($data)) {
-            return redirect()->to('transaksi/bahan-baku')->with('success', 'Transaksi berhasil disimpan');
+        try {
+            $this->transactionBahanBakuModel->insertTransaction($data);
+            session()->setFlashdata('success', 'Transaksi berhasil disimpan');
+        } catch (\Exception $e) {
+            session()->setFlashdata('error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
         }
 
-        return redirect()->back()->withInput()->with('error', 'Gagal menyimpan transaksi');
+        return redirect()->to('transaksi/bahan-baku');
     }
 
     protected function validateData(array $data, $rules = null, array $messages = [], ?string $dbGroup = null): bool
