@@ -7,46 +7,56 @@ use CodeIgniter\Model;
 class ItemModel extends Model
 {
     protected $table = 'items_part';
-    protected $table2 = 'items';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
+    protected $useSoftDeletes = false;
+
     protected $allowedFields = [
-        'id',
         'part_number',
         'name',
+        'warehouse_id',
         'stock',
         'minimum_stock',
-        'updated_at',
-        'kategori_tabung'
+        'created_at',
+        'updated_at'
     ];
 
-    // Validation rules
+    protected $useTimestamps = true;
+    protected $createdField = 'created_at';
+    protected $updatedField = 'updated_at';
+
+    // Validasi
     protected $validationRules = [
+        'part_number' => 'required|min_length[1]',
         'name' => 'required|min_length[3]',
-        'type' => 'required',
-        'stock' => 'required|numeric|greater_than_equal_to[0]'
+        'warehouse_id' => 'required|numeric'
     ];
 
     protected $validationMessages = [
+        'part_number' => [
+            'required' => 'Part Number harus diisi',
+            'min_length' => 'Part Number minimal 1 karakter'
+        ],
         'name' => [
-            'required' => 'Nama barang harus diisi',
-            'min_length' => 'Nama barang minimal 3 karakter'
+            'required' => 'Nama harus diisi',
+            'min_length' => 'Nama minimal 3 karakter'
         ],
-        'type' => [
-            'required' => 'Tipe barang harus diisi'
-        ],
-        'stock' => [
-            'required' => 'Stok barang harus diisi',
-            'numeric' => 'Stok harus berupa angka',
-            'greater_than_equal_to' => 'Stok tidak boleh negatif'
+        'warehouse_id' => [
+            'required' => 'Gudang harus dipilih',
+            'numeric' => 'ID Gudang harus berupa angka'
         ]
     ];
 
     protected $skipValidation = false;
-    protected $useTimestamps = true;
-    protected $createdField = 'created_at';
-    protected $updatedField = 'updated_at';
+
+    // Method untuk mengecek duplikasi part_number dan warehouse_id
+    public function isDuplicate($part_number, $warehouse_id)
+    {
+        return $this->where('part_number', $part_number)
+                    ->where('warehouse_id', $warehouse_id)
+                    ->countAllResults() > 0;
+    }
 
     public function getStockSummary()
     {
@@ -182,15 +192,18 @@ class ItemModel extends Model
     public function getBahanBakuSummary()
     {
         try {
-            $builder = $this->db->table('items_part')
+            $builder = $this->db->table('items_part ip')
                 ->select('
-                    id,
-                    part_number,
-                    name,
-                    stock,
-                    minimum_stock
+                    ip.id,
+                    ip.part_number,
+                    ip.name,
+                    ip.stock,
+                    ip.minimum_stock,
+                    ip.warehouse_id,
+                    w.name as warehouse_name
                 ')
-                ->orderBy('stock', 'asc');
+                ->join('warehouses w', 'w.id = ip.warehouse_id', 'left')
+                ->orderBy('ip.name', 'asc');
 
             // Log query untuk debugging
             $sql = $builder->getCompiledSelect(false);
@@ -200,11 +213,12 @@ class ItemModel extends Model
             
             // Log hasil query
             log_message('info', 'HASIL QUERY BAHAN BAKU: ' . count($result) . ' records ditemukan');
+            log_message('info', 'Data hasil query: ' . json_encode($result));
             
             // Format data untuk tampilan
             foreach ($result as &$item) {
                 $item['status'] = $item['stock'] <= $item['minimum_stock'] ? 'warning' : 'normal';
-                // $item['expired_status'] = strtotime($item['expired_date']) < time() ? 'expired' : 'active';
+                $item['warehouse_name'] = $item['warehouse_name'] ?? 'Belum ditentukan';
             }
             
             return $result;
@@ -215,38 +229,78 @@ class ItemModel extends Model
         }
     }
 
-    public function getBahanBakuItems($perPage = 10, $currentPage = 1)
+    public function getBahanBakuItems($perPage = 8, $currentPage = 1)
     {
         try {
             $offset = ($currentPage - 1) * $perPage;
             
-            $builder = $this->db->table('items_part');
+            $builder = $this->db->table('items_part ip');
             $builder->select('
-                id,
-                part_number,
-                name,
-                stock,
-                minimum_stock,
-                updated_at
-            ');
-            $builder->orderBy('name', 'ASC');
+                ip.id,
+                ip.part_number,
+                ip.name,
+                ip.stock,
+                ip.minimum_stock,
+                ip.warehouse_id,
+                ip.updated_at,
+                w.name as warehouse_name
+            ')
+            ->join('warehouses w', 'w.id = ip.warehouse_id', 'left')
+            ->orderBy('ip.part_number, w.name', 'ASC');
             
-            // Get total rows for pagination
-            $total = $builder->countAllResults(false);
+            // Log the query for debugging
+            log_message('info', 'QUERY getBahanBakuItems: ' . $builder->getCompiledSelect(false));
+            
+            // Get total rows without pagination first
+            $totalBuilder = clone $builder;
+            $total = $totalBuilder->countAllResults();
+            log_message('info', 'Total rows found: ' . $total);
             
             // Get paginated data
             $items = $builder->limit($perPage, $offset)->get()->getResultArray();
             
-            // Set up pagination
-            $this->pager = service('pager');
-            $this->pager->setPath('stok/bahan-baku');
-            $this->pager->makeLinks($currentPage, $perPage, $total);
+            // Log the results for debugging
+            log_message('info', 'Items retrieved: ' . json_encode($items));
             
-            return $items;
+            // Group items by part_number for checking duplicates
+            $groupedItems = [];
+            foreach ($items as $item) {
+                $key = $item['part_number'];
+                if (!isset($groupedItems[$key])) {
+                    $groupedItems[$key] = [];
+                }
+                $groupedItems[$key][] = $item;
+            }
+            
+            // Log grouped items for debugging
+            log_message('info', 'Grouped items by part_number: ' . json_encode($groupedItems));
+            
+            // Set up pagination
+            $pager = service('pager');
+            $pager->setPath('stok/bahan-baku');
+            $pager->makeLinks($currentPage, $perPage, $total);
+            
+            $result = [
+                'items' => $items,
+                'pager' => $pager,
+                'total' => $total,
+                'grouped_items' => $groupedItems
+            ];
+            
+            // Log final result
+            log_message('info', 'Final result structure: ' . json_encode(array_keys($result)));
+            
+            return $result;
             
         } catch (\Exception $e) {
             log_message('error', 'Error in getBahanBakuItems: ' . $e->getMessage());
-            return [];
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return [
+                'items' => [],
+                'pager' => service('pager'),
+                'total' => 0,
+                'grouped_items' => []
+            ];
         }
     }
 
@@ -302,62 +356,61 @@ class ItemModel extends Model
     }
 
     public function getLaporanTabung()
-{
-    $builder = $this->db->table($this->table2 . ' k');
-    
-    // Get current month and year
-    $currentMonth = date('m');
-    $currentYear = date('Y');
-    
-    $builder->select('
-        k.*, 
-        COALESCE(b.totalKeluar, 0) AS totalKeluar,
-        COALESCE(m.totalMasuk, 0) AS totalMasuk,
-        CASE 
-            WHEN MONTH(k.updated_at) = ' . $currentMonth . ' 
-            AND YEAR(k.updated_at) = ' . $currentYear . ' 
-            THEN "Ya" 
-            ELSE "Tidak" 
-        END as update_bulan_ini,
-        CASE 
-            WHEN YEAR(k.updated_at) = ' . $currentYear . ' 
-            THEN "Ya" 
-            ELSE "Tidak" 
-        END as update_tahun_ini
-    ')
-    ->where('k.name LIKE', '%kg%')
-    ->join('(
-        SELECT 
-            item_id, 
-            SUM(quantity) AS totalKeluar 
-        FROM 
-            transactions 
-        WHERE 
-            type = "keluar" 
-        GROUP BY 
-            item_id
-    ) AS b', 'k.id = b.item_id', 'left')
-    ->join('(
-        SELECT 
-            item_id, 
-            SUM(quantity) AS totalMasuk 
-        FROM 
-            transactions 
-        WHERE 
-            type = "masuk" 
-        GROUP BY 
-            item_id
-    ) AS m', 'k.id = m.item_id', 'left')
-    ->orderBy('k.name', 'ASC');
-    
-    $query = $builder->get();
-    
-    // Log query untuk debugging
-    log_message('debug', 'Last Query: ' . $this->db->getLastQuery());
-    
-    return $query->getResultArray();
-}
-
+    {
+        $builder = $this->db->table($this->table . ' k');
+        
+        // Get current month and year
+        $currentMonth = date('m');
+        $currentYear = date('Y');
+        
+        $builder->select('
+            k.*, 
+            COALESCE(b.totalKeluar, 0) AS totalKeluar,
+            COALESCE(m.totalMasuk, 0) AS totalMasuk,
+            CASE 
+                WHEN MONTH(k.updated_at) = ' . $currentMonth . ' 
+                AND YEAR(k.updated_at) = ' . $currentYear . ' 
+                THEN "Ya" 
+                ELSE "Tidak" 
+            END as update_bulan_ini,
+            CASE 
+                WHEN YEAR(k.updated_at) = ' . $currentYear . ' 
+                THEN "Ya" 
+                ELSE "Tidak" 
+            END as update_tahun_ini
+        ')
+        ->where('k.name LIKE', '%kg%')
+        ->join('(
+            SELECT 
+                item_id, 
+                SUM(quantity) AS totalKeluar 
+            FROM 
+                transactions 
+            WHERE 
+                type = "keluar" 
+            GROUP BY 
+                item_id
+        ) AS b', 'k.id = b.item_id', 'left')
+        ->join('(
+            SELECT 
+                item_id, 
+                SUM(quantity) AS totalMasuk 
+            FROM 
+                transactions 
+            WHERE 
+                type = "masuk" 
+            GROUP BY 
+                item_id
+        ) AS m', 'k.id = m.item_id', 'left')
+        ->orderBy('k.name', 'ASC');
+        
+        $query = $builder->get();
+        
+        // Log query untuk debugging
+        log_message('debug', 'Last Query: ' . $this->db->getLastQuery());
+        
+        return $query->getResultArray();
+    }
 
     // Method untuk laporan bahan baku
     public function getLaporanBahanBaku()

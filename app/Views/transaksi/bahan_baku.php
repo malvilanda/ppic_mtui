@@ -1,4 +1,5 @@
 <?= $this->include('dashboard/header') ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- Tambahkan CSS Select2 -->
 <link href="<?= base_url('assets/select2/select2.min.css') ?>" rel="stylesheet" />
@@ -17,10 +18,14 @@
                     <select name="item_id" id="itemSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                         <option value="">Pilih Bahan Baku</option>
                         <?php foreach ($items as $item): ?>
-                            <option value="<?= $item['id'] ?>" data-stock="<?= $item['stock'] ?>"><?= $item['name'] ?> (Stok: <?= $item['stock'] ?>)</option>
+                            <option value="<?= $item['id'] ?>" 
+                                    data-stock="<?= $item['stock'] ?>"
+                                    data-warehouse="<?= $item['warehouse_id'] ?>">
+                                <?= $item['name'] ?> (Stok: <?= number_format($item['stock']) ?> | Gudang: <?= $item['warehouse_name'] ?>)
+                            </option>
                         <?php endforeach; ?>
                     </select>
-                    <p id="stockWarning" class="hidden mt-2 text-sm text-red-600">Stok tidak mencukupi untuk transaksi keluar</p>
+                    <p id="stockWarning" class="hidden mt-2 text-sm text-red-600">Stok tidak tersedia di gudang yang dipilih</p>
                 </div>
 
                 <!-- Jenis Transaksi -->
@@ -68,7 +73,7 @@
             </div>
 
             <div class="flex justify-end">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                <button type="submit" id="submitButton" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
                     Simpan Transaksi
                 </button>
             </div>
@@ -86,7 +91,9 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bahan Baku</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaksi</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gudang</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sisa Stok</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PIC</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catatan</th>
                     </tr>
@@ -94,17 +101,27 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php foreach ($transactions as $trans): ?>
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap"><?= date('d/m/Y H:i', strtotime($trans['transaction_date'])) ?></td>
-                        <td class="px-6 py-4"><?= $trans['item_name'] ?></td>
+                        <td class="px-6 py-4 whitespace-nowrap"><?= date('d/m/Y H:i', strtotime($trans['created_at'])) ?></td>
+                        <td class="px-6 py-4"><?= esc($trans['item_name']) ?></td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-1 text-xs font-semibold rounded-full <?= $trans['type'] === 'masuk' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
                                 <?= ucfirst($trans['type']) ?>
                             </span>
                         </td>
-                        <td class="px-6 py-4"><?= $trans['warehouse_name'] ?></td>
+                        <td class="px-6 py-4"><?= esc($trans['warehouse_name']) ?></td>
+                        <td class="px-6 py-4"><?= esc($trans['unit_name']) ?></td>
                         <td class="px-6 py-4"><?= number_format($trans['quantity']) ?></td>
-                        <td class="px-6 py-4"><?= $trans['pic_name'] ?></td>
-                        <td class="px-6 py-4"><?= $trans['notes'] ?></td>
+                        <td class="px-6 py-4">
+                            <?php 
+                                $remainingStock = isset($trans['remaining_stock']) ? (int)$trans['remaining_stock'] : 0;
+                                $colorClass = $remainingStock <= 0 ? 'text-red-600 font-semibold' : 'text-gray-900';
+                            ?>
+                            <span class="<?= $colorClass ?>">
+                                <?= number_format($remainingStock, 0, ',', '.') ?>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4"><?= esc($trans['pic_name']) ?></td>
+                        <td class="px-6 py-4"><?= esc($trans['notes']) ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -123,8 +140,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const unitField = document.getElementById('unitField');
     const unitSelect = document.getElementById('unitSelect');
     const itemSelect = document.getElementById('itemSelect');
+    const warehouseSelect = document.getElementById('warehouseSelect');
     const stockWarning = document.getElementById('stockWarning');
     const quantityInput = document.getElementById('quantityInput');
+    const submitButton = document.getElementById('submitButton');
 
     // Inisialisasi Select2
     $('#itemSelect').select2({
@@ -148,59 +167,105 @@ document.addEventListener('DOMContentLoaded', function() {
         width: '100%'
     });
 
-    // Function to toggle unit field
-    function toggleUnitField() {
-        const isOutgoing = transactionType.value === 'keluar';
-        unitField.style.display = isOutgoing ? 'block' : 'none';
-        unitSelect.required = isOutgoing;
-        
-        if (isOutgoing) {
-            checkStock();
+    // Function untuk cek ketersediaan stok
+    function checkStockAvailability() {
+        if (transactionType.value === 'keluar') {
+            const selectedItem = itemSelect.options[itemSelect.selectedIndex];
+            const selectedWarehouse = warehouseSelect.value;
+            const quantity = parseInt(quantityInput.value) || 0;
+
+            // Default state
+            submitButton.disabled = false;
+            stockWarning.classList.add('hidden');
+
+            // Jika item dan gudang sudah dipilih
+            if (selectedItem && selectedWarehouse) {
+                const itemWarehouse = selectedItem.dataset.warehouse;
+                
+                // Cek apakah item tersedia di gudang yang dipilih
+                if (itemWarehouse != selectedWarehouse) {
+                    Swal.fire({
+                        title: 'Stok Tidak Tersedia',
+                        text: 'Stok tidak tersedia di gudang yang dipilih',
+                        icon: 'warning',
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    });
+                    submitButton.disabled = true;
+                    return false;
+                }
+
+                // Cek jumlah stok
+                const currentStock = parseInt(selectedItem.dataset.stock);
+                if (isNaN(currentStock) || currentStock <= 0) {
+                    Swal.fire({
+                        title: 'Stok Kosong',
+                        text: 'Stok tidak tersedia',
+                        icon: 'warning',
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    });
+                    submitButton.disabled = true;
+                    return false;
+                }
+
+                if (quantity > currentStock) {
+                    Swal.fire({
+                        title: 'Stok Tidak Cukup',
+                        text: 'Jumlah melebihi stok yang tersedia',
+                        icon: 'warning',
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    });
+                    submitButton.disabled = true;
+                    return false;
+                }
+            }
         } else {
+            // Jika transaksi masuk, enable button
+            submitButton.disabled = false;
             stockWarning.classList.add('hidden');
         }
-    }
-
-    // Function to check stock availability
-    function checkStock() {
-        if (transactionType.value === 'keluar' && itemSelect.value) {
-            const selectedOption = itemSelect.options[itemSelect.selectedIndex];
-            const currentStock = parseInt(selectedOption.dataset.stock);
-            const quantity = parseInt(quantityInput.value) || 0;
-            
-            if (quantity > currentStock) {
-                stockWarning.classList.remove('hidden');
-                return false;
-            }
-        }
-        stockWarning.classList.add('hidden');
         return true;
     }
 
-    // Event listeners
-    transactionType.addEventListener('change', toggleUnitField);
-    itemSelect.addEventListener('change', checkStock);
-    quantityInput.addEventListener('input', checkStock);
+    // Event listeners untuk semua input yang mempengaruhi validasi
+    transactionType.addEventListener('change', function() {
+        const isOutgoing = this.value === 'keluar';
+        unitField.style.display = isOutgoing ? 'block' : 'none';
+        unitSelect.required = isOutgoing;
+        checkStockAvailability();
+    });
+
+    itemSelect.addEventListener('change', checkStockAvailability);
+    warehouseSelect.addEventListener('change', checkStockAvailability);
+    quantityInput.addEventListener('input', checkStockAvailability);
 
     // Form validation
     form.addEventListener('submit', function(e) {
         if (transactionType.value === 'keluar') {
-            if (!checkStock()) {
+            if (!checkStockAvailability()) {
                 e.preventDefault();
-                alert('Stok tidak mencukupi untuk transaksi keluar');
                 return;
             }
             
             if (!unitSelect.value) {
                 e.preventDefault();
-                alert('Unit pengambil harus dipilih untuk transaksi keluar');
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Unit pengambil harus dipilih untuk transaksi keluar',
+                    icon: 'error',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'OK'
+                });
                 unitSelect.focus();
                 return;
             }
         }
     });
 
-    // Initial toggle
+    // Initial checks
     toggleUnitField();
+    checkStockAvailability();
 });
-</script> 
+</script>

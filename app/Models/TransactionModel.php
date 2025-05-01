@@ -12,27 +12,27 @@ class TransactionModel extends Model
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
+    protected $useSoftDeletes = false;
+
     protected $allowedFields = [
         'item_id',
-        'warehouse_id',
-        'client_id',
-        'user_id',
         'type',
         'quantity',
-        'transaction_date',
-        'notes',
-        'created_at',
-        'updated_at',
-        'delivery_order',
+        'warehouse_id',
+        'client_id',
         'delivery_address',
         'receiver_name',
         'receiver_phone',
-        'kategori_tabung'
+        'delivery_order',
+        'notes',
+        'created_by',
+        'status',
+        'transaction_date'
     ];
 
     protected $useTimestamps = true;
-    protected $createdField = 'transaction_date';
-    protected $updatedField = '';
+    protected $createdField = 'created_at';
+    protected $updatedField = 'updated_at';
 
     protected $validationRules = [
         'item_id' => 'required|numeric',
@@ -480,5 +480,20 @@ class TransactionModel extends Model
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return [];
         }
+    }
+
+    public function getTransaksiTabung()
+    {
+        return $this->select('
+                transactions.*,
+                items_part.name as item_name,
+                warehouses.name as warehouse_name,
+                clients.name as client_name
+            ')
+            ->join('items_part', 'items_part.id = transactions.item_id', 'left')
+            ->join('warehouses', 'warehouses.id = transactions.warehouse_id', 'left')
+            ->join('clients', 'clients.client_id = transactions.client_id', 'left')
+            ->orderBy('transactions.created_at', 'DESC')
+            ->findAll();
     }
 } 

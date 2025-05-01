@@ -124,6 +124,7 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Nama Bahan</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Stok</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Gudang</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Minimum Stok</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">Status</th>
                         </tr>
@@ -141,6 +142,11 @@
                             <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
                                     <?= number_format($item['stock']) ?> unit
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    <?= $item['warehouse_name'] ?? '-' ?>
                                 </div>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">

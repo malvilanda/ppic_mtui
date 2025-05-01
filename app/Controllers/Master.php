@@ -2,18 +2,25 @@
 
 namespace App\Controllers;
 
+use App\Controllers\BaseController;
 use App\Models\ItemTypeModel;
 use App\Models\ItemCategoryModel;
+use App\Models\WarehouseModel;
+use App\Models\ItemModel;
 
 class Master extends BaseController
 {
     protected $itemTypeModel;
     protected $itemCategoryModel;
+    protected $itemModel;
+    protected $warehouseModel;
 
     public function __construct()
     {
         $this->itemTypeModel = new ItemTypeModel();
         $this->itemCategoryModel = new ItemCategoryModel();
+        $this->itemModel = new ItemModel();
+        $this->warehouseModel = new WarehouseModel();
     }
 
     public function tabung()
@@ -27,46 +34,23 @@ class Master extends BaseController
 
     public function bahanBaku()
     {
-        $db = \Config\Database::connect();
-        $builder = $db->table('items_part');
-        
-        // Get search keyword
         $keyword = $this->request->getGet('keyword');
         
-        // Apply search filter
-        if (!empty($keyword)) {
-            $builder->like('name', $keyword)
-                    ->orLike('part_number', $keyword);
+        // Get items with warehouse information
+        $items = $this->itemModel->select('items_part.*, warehouses.name as warehouse_name')
+            ->join('warehouses', 'warehouses.id = items_part.warehouse_id', 'left');
+            
+        if ($keyword) {
+            $items->like('items_part.name', $keyword)
+                  ->orLike('items_part.part_number', $keyword);
         }
         
-        // Count total results for pagination
-        $total = $builder->countAllResults(false);
-        
-        // Setup pagination
-        $perPage = 10;
-        $currentPage = $this->request->getGet('page') ?? 1;
-        $offset = ($currentPage - 1) * $perPage;
-        
-        // Get data with pagination
-        $items_part = $builder->orderBy('name', 'ASC')
-                      ->limit($perPage, $offset)
-                      ->get()
-                      ->getResultArray();
-        
-        // Setup pager
-        $pager = service('pager');
-        $pager->setPath('master/bahan-baku');
-        $pager->makeLinks($currentPage, $perPage, $total);
-        
         $data = [
-            'title' => 'Master Bahan Baku',
-            'categories' => $this->itemCategoryModel->findAll(),
-            'types' => $this->itemTypeModel->where('category', 'bahan_baku')->findAll(),
-            'items_part' => $items_part,
-            'pager' => $pager,
-            'keyword' => $keyword,
-            'total' => $total
+            'items_part' => $items->findAll(),
+            'warehouses' => $this->warehouseModel->findAll(),
+            'keyword' => $keyword
         ];
+
         return view('master/bahan_baku', $data);
     }
 
@@ -153,60 +137,29 @@ class Master extends BaseController
 
     public function storeItemsPart()
     {
-        // Log untuk debugging
-        log_message('debug', '===============================================');
-        log_message('debug', 'storeItemsPart method called');
-        log_message('debug', 'POST data: ' . json_encode($this->request->getPost()));
-        log_message('debug', 'Form data: name=' . $this->request->getPost('name') . ', part_number=' . $this->request->getPost('part_number'));
-        
-        // Validasi input
-        $rules = [
-            'name' => 'required|min_length[3]',
-            'part_number' => 'required|min_length[3]'
-        ];
+        $part_number = $this->request->getPost('part_number');
+        $warehouse_id = $this->request->getPost('warehouse_id');
 
-        if (!$this->validate($rules)) {
-            log_message('error', 'Validation errors: ' . json_encode($this->validator->getErrors()));
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        // Cek duplikasi
+        if ($this->itemModel->isDuplicate($part_number, $warehouse_id)) {
+            session()->setFlashdata('error', 'Part number ini sudah terdaftar di gudang yang dipilih. Silakan edit pada menu stok bahan baku.');
+            return redirect()->to('master/bahan-baku');
         }
 
-        // Ambil data dari form
-        $name = $this->request->getPost('name');
-        $partNumber = $this->request->getPost('part_number');
-        
-        // Log nilai variabel
-        log_message('debug', 'Variables: name=' . $name . ', partNumber=' . $partNumber);
-        
-        // Siapkan data untuk disimpan
         $data = [
-            'name' => $name,
-            'part_number' => $partNumber,
-            'stock' => 0, // Default stok 0
-            'minimum_stock' => 0, // Default minimum stok 0
-            'updated_at' => date('Y-m-d H:i:s'),
-            'created_at' => date('Y-m-d H:i:s')
+            'part_number' => $part_number,
+            'name' => $this->request->getPost('name'),
+            'warehouse_id' => $warehouse_id,
+            'stock' => 0,
+            'minimum_stock' => 0
         ];
-        
-        log_message('debug', 'Data to insert: ' . json_encode($data));
-        
-        // Simpan ke database
-        try {
-            $db = \Config\Database::connect();
-            log_message('debug', 'Database connection established');
-            
-            $builder = $db->table('items_part');
-            log_message('debug', 'Table builder created');
-            
-            $result = $builder->insert($data);
-            log_message('debug', 'Insert result: ' . ($result ? 'true' : 'false'));
-            log_message('debug', 'Last query: ' . $db->getLastQuery());
-            
-            // Redirect kembali dengan pesan sukses
-            return redirect()->to('master/bahan-baku')->with('success', 'Bahan baku berhasil ditambahkan');
-        } catch (\Exception $e) {
-            log_message('error', 'Error in storeItemsPart: ' . $e->getMessage());
-            log_message('error', 'Error trace: ' . $e->getTraceAsString());
-            return redirect()->to('master/bahan-baku')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+
+        if ($this->itemModel->insert($data)) {
+            session()->setFlashdata('success', 'Data bahan baku berhasil ditambahkan');
+        } else {
+            session()->setFlashdata('error', 'Gagal menambahkan data bahan baku');
         }
+
+        return redirect()->to('master/bahan-baku');
     }
 } 

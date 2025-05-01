@@ -56,6 +56,7 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Part Number</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gudang</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minimum Stok</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Update Terakhir</th>
@@ -65,7 +66,7 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         <?php if (empty($items_part)): ?>
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                                 <?= !empty($keyword) ? "Tidak ada data yang cocok dengan pencarian \"$keyword\"" : "Tidak ada data" ?>
                             </td>
                         </tr>
@@ -77,6 +78,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900"><?= $item['name'] ?></div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900"><?= isset($item['warehouse_name']) ? esc($item['warehouse_name']) : '-' ?></div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900"><?= $item['stock'] ?></div>
@@ -177,7 +181,7 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Tambah Bahan Baku</h3>
-            <form action="<?= site_url('master/store-items-part') ?>" method="POST">
+            <form action="<?= site_url('master/store-items-part') ?>" method="POST" id="addItemForm">
                 <!-- Part Number -->
                 <div class="mb-4">
                     <label for="part_number" class="block text-sm font-medium text-gray-700">Part Number</label>
@@ -190,6 +194,18 @@
                     <label for="name" class="block text-sm font-medium text-gray-700">Nama</label>
                     <input type="text" name="name" id="name" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <!-- Gudang -->
+                <div class="mb-4">
+                    <label for="warehouse_id" class="block text-sm font-medium text-gray-700">Gudang</label>
+                    <select name="warehouse_id" id="warehouse_id" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Pilih Gudang</option>
+                        <?php foreach ($warehouses as $warehouse): ?>
+                            <option value="<?= $warehouse['id'] ?>"><?= esc($warehouse['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 
                 <!-- Tombol -->
@@ -279,5 +295,51 @@ document.getElementById('categoryFilter')?.addEventListener('change', function()
             row.style.display = 'none';
         }
     });
+});
+
+// Tambahkan fungsi untuk validasi form
+document.getElementById('addItemForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const part_number = formData.get('part_number');
+    const warehouse_id = formData.get('warehouse_id');
+    
+    try {
+        const response = await fetch('<?= site_url('master/check-duplicate-item') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                part_number: part_number,
+                warehouse_id: warehouse_id
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.exists) {
+            Swal.fire({
+                title: 'Data Sudah Ada',
+                text: 'Part number ini sudah terdaftar di gudang yang dipilih. Silakan edit pada menu stok bahan baku.',
+                icon: 'warning',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            // Jika tidak ada duplikat, submit form
+            this.submit();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'Terjadi kesalahan saat memproses permintaan',
+            icon: 'error',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'OK'
+        });
+    }
 });
 </script> 

@@ -7,6 +7,7 @@ use App\Models\StockOpnameModel;
 use App\Models\WarehouseModel;
 use App\Models\OpnameBahanModel;
 use App\Models\BahanBakuModel;
+use App\Models\TransactionBahanBakuModel;
 
 class Stok extends BaseController
 {
@@ -15,6 +16,7 @@ class Stok extends BaseController
     protected $warehouseModel;
     protected $opnameBahanModel;
     protected $bahanBakuModel;
+    protected $transactionBahanBakuModel;
     protected $table_tabung = 'items';
 
     public function __construct()
@@ -24,6 +26,7 @@ class Stok extends BaseController
         $this->warehouseModel = new WarehouseModel();
         $this->opnameBahanModel = new OpnameBahanModel();
         $this->bahanBakuModel = new BahanBakuModel();
+        $this->transactionBahanBakuModel = new TransactionBahanBakuModel();
     }
 
     public function perGudang()
@@ -69,32 +72,14 @@ class Stok extends BaseController
 
     public function bahanBaku()
     {
-        $currentPage = $this->request->getVar('page_items') ?? 1;
+        // Get current page from url
+        $currentPage = $this->request->getGet('page') ?? 1;
         
-        // Ambil data dari tabel items_part dengan pagination
-        $data = [
-            'items' => $this->itemModel->getBahanBakuItems(10, $currentPage), // 10 items per page
-            'pager' => $this->itemModel->pager,
-            'currentPage' => $currentPage,
-            'tabung_summary' => [
-                '3kg' => [
-                    'current_stock' => $this->itemModel->getStokByJenis('3'),
-                    'total_keluar' => 0
-                ],
-                '5kg' => [
-                    'current_stock' => $this->itemModel->getStokByJenis('5'),
-                    'total_keluar' => 0
-                ],
-                '12kg' => [
-                    'current_stock' => $this->itemModel->getStokByJenis('12'),
-                    'total_keluar' => 0
-                ],
-                '15kg' => [
-                    'current_stock' => $this->itemModel->getStokByJenis('15'),
-                    'total_keluar' => 0
-                ]
-            ]
-        ];
+        // Get items with pagination
+        $data = $this->itemModel->getBahanBakuItems(8, $currentPage);
+        
+        // Add current page to data
+        $data['current_page'] = $currentPage;
         
         return view('stok/bahan_baku', $data);
     }

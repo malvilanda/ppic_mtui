@@ -77,7 +77,10 @@ $routes->group('master', ['filter' => 'auth'], function($routes) {
     $routes->post('store-items-part', 'Master::storeItemsPart');
     $routes->get('items-part/delete/(:num)', 'Master::deleteItemsPart/$1');
     $routes->get('type/delete/(:num)', 'Master::deleteType/$1');
+    $routes->post('master/check-duplicate-item', 'ItemsPartController::checkDuplicateItem');
 });
+
+$routes->get('transaksi/bahan-baku/list', 'Transaksi::getTransaksiBahanBaku');
 
 // Delivery Order Routes
 $routes->get('delivery-order', 'DeliveryOrder::index');

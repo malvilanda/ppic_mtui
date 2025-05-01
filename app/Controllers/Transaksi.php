@@ -42,22 +42,13 @@ class Transaksi extends BaseController
 
     public function tabung()
     {
-        // Load model yang diperlukan
-        $itemModel = new \App\Models\ItemModel();
-        $clientModel = new \App\Models\ClientModel();
-        $warehouseModel = new \App\Models\WarehouseModel();
-        $transactionModel = new \App\Models\TransactionModel();
-
-        // Ambil data untuk form dan riwayat transaksi
         $data = [
-            'items' => $itemModel->db->table($itemModel->table2)->get()->getResultArray(), // Menggunakan table2 (items)
-            'clients' => $clientModel->findAll(),
-            'warehouses' => $warehouseModel->findAll(),
-            'transactions' => $transactionModel->getTabungTransactions()
+            'title' => 'Transaksi Tabung',
+            'items' => $this->itemModel->findAll(),
+            'clients' => $this->clientModel->findAll(),
+            'warehouses' => $this->warehouseModel->findAll(),
+            'transactions' => $this->transactionModel->getTransaksiTabung()
         ];
-
-        // Log untuk debugging
-        log_message('info', 'DATA TRANSAKSI: ' . json_encode($data['transactions']));
 
         return view('transaksi/tabung', $data);
     }
@@ -65,7 +56,9 @@ class Transaksi extends BaseController
     public function bahanBaku()
     {
         $data = [
-            'items' => $this->itemModel->findAll(),
+            'items' => $this->itemModel->select('items_part.*, warehouses.name as warehouse_name')
+                                     ->join('warehouses', 'warehouses.id = items_part.warehouse_id', 'left')
+                                     ->findAll(),
             'warehouses' => $this->warehouseModel->findAll(),
             'units' => $this->unitModel->findAll(),
             'transactions' => $this->transactionBahanBakuModel->getTransactions()
@@ -381,20 +374,41 @@ class Transaksi extends BaseController
 
     public function saveBahanBaku()
     {
-        $data = [
-            'item_id' => $this->request->getPost('item_id'),
-            'warehouse_id' => $this->request->getPost('warehouse_id'),
-            'user_id' => session()->get('user_id'),
-            'type' => $this->request->getPost('type'),
-            'quantity' => $this->request->getPost('quantity'),
-            'notes' => $this->request->getPost('notes'),
-            'unit_id' => $this->request->getPost('unit_id')
-        ];
-
         try {
-            $this->transactionBahanBakuModel->insertTransaction($data);
-            session()->setFlashdata('success', 'Transaksi berhasil disimpan');
+            // Validasi input
+            $rules = [
+                'item_id' => 'required|numeric',
+                'warehouse_id' => 'required|numeric',
+                'type' => 'required|in_list[masuk,keluar]',
+                'quantity' => 'required|numeric|greater_than[0]'
+            ];
+
+            if (!$this->validate($rules)) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Validasi gagal: ' . implode(', ', $this->validator->getErrors()));
+            }
+
+            // Siapkan data
+            $data = [
+                'item_id' => $this->request->getPost('item_id'),
+                'warehouse_id' => $this->request->getPost('warehouse_id'),
+                'user_id' => session()->get('user_id'),
+                'type' => $this->request->getPost('type'),
+                'quantity' => $this->request->getPost('quantity'),
+                'notes' => $this->request->getPost('notes'),
+                'unit_id' => $this->request->getPost('unit_id')
+            ];
+
+            // Coba simpan transaksi
+            if ($this->transactionBahanBakuModel->insertTransaction($data)) {
+                session()->setFlashdata('success', 'Transaksi berhasil disimpan dan stok telah diperbarui');
+            } else {
+                throw new \Exception('Gagal menyimpan transaksi');
+            }
+
         } catch (\Exception $e) {
+            log_message('error', 'Error in saveBahanBaku: ' . $e->getMessage());
             session()->setFlashdata('error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
         }
 
@@ -502,4 +516,28 @@ class Transaksi extends BaseController
             echo "Stack Trace:\n" . $e->getTraceAsString() . "\n";
         }
     }
-} 
+
+    public function getTransaksiBahanBaku()
+    {
+        $builder = $this->db->table('transactions_bahan_baku tb');
+        $builder->select('
+            tb.*,
+            w.name as warehouse_name,
+            u.name as unit_name,
+            i.name as item_name,
+            us.name as pic_name
+        ');
+        $builder->join('warehouses w', 'w.id = tb.warehouse_id');
+        $builder->join('units u', 'u.id = tb.unit_id');
+        $builder->join('items i', 'i.id = tb.item_id');
+        $builder->join('users us', 'us.id = tb.user_id');
+        $builder->orderBy('tb.created_at', 'DESC');
+        
+        $result = $builder->get()->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $result
+        ]);
+    }
+}

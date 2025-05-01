@@ -30,73 +30,153 @@
         <!-- Tabel Stok -->
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead>
+                <thead class="bg-gray-50">
                     <tr class="bg-gray-50">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Part Number</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Bahan</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok Saat Ini</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gudang</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minimum Stok</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terakhir Update</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <?php foreach ($items as $item): ?>
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900"><?= $item['part_number'] ?></div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900"><?= $item['name'] ?></div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900"><?= number_format($item['stock'], 0, ',', '.') ?></div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900"><?= number_format($item['minimum_stock'], 0, ',', '.') ?></div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <?php if ($item['stock'] <= $item['minimum_stock']): ?>
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                    Stok Rendah
-                                </span>
-                            <?php else: ?>
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                    Stok Aman
-                                </span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-500"><?= date('d/m/Y H:i', strtotime($item['updated_at'])) ?></div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button type="button" 
-                                    onclick='editItem(<?= json_encode($item) ?>)' 
-                                    class="text-blue-600 hover:text-blue-900 mr-3">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                        </td>
-                    </tr>
+                    <?php 
+                    $no = 1 + (8 * ((int)$current_page - 1));
+                    foreach ($items as $item): 
+                    ?>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $no++ ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['part_number'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= $item['name'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['warehouse_name'] ?? '-' ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= number_format($item['stock']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= number_format($item['minimum_stock']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <?php if ($item['stock'] <= $item['minimum_stock']): ?>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Stok Minimum
+                                    </span>
+                                <?php else: ?>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Stok Aman
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button type="button" 
+                                        onclick='editItem(<?= json_encode($item) ?>)' 
+                                        class="text-blue-600 hover:text-blue-900">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            
-            <!-- Pagination -->
-            <div class="px-6 py-4 bg-white border-t border-gray-200">
-                <div class="flex justify-between items-center">
-                    <div class="text-sm text-gray-500">
-                        Menampilkan <?= count($items) ?> dari total data
-                    </div>
-                    <div>
-                        <?php if (isset($pager)): ?>
-                            <?= $pager->links('default', 'default_tailwind') ?>
+        </div>
+
+        <!-- Pagination -->
+        <?php if ($pager): ?>
+        <div class="mt-6 flex justify-between items-center px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+                <?php 
+                $currentPage = (int)$_GET['page'] ?? 1;
+                $pageCount = ceil($total / 8); // 8 adalah items per page
+                ?>
+                <?php if ($currentPage > 1): ?>
+                    <a href="<?= site_url('stok/bahan-baku?page=' . ($currentPage - 1)) ?>" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Previous
+                    </a>
+                <?php endif; ?>
+                <?php if ($currentPage < $pageCount): ?>
+                    <a href="<?= site_url('stok/bahan-baku?page=' . ($currentPage + 1)) ?>" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Next
+                    </a>
+                <?php endif; ?>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Menampilkan
+                        <span class="font-medium"><?= (($currentPage - 1) * 8) + 1 ?></span>
+                        sampai
+                        <span class="font-medium"><?= min($currentPage * 8, $total) ?></span>
+                        dari
+                        <span class="font-medium"><?= $total ?></span>
+                        data
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <?php if ($currentPage > 1): ?>
+                            <a href="<?= site_url('stok/bahan-baku?page=' . ($currentPage - 1)) ?>" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Previous</span>
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
                         <?php endif; ?>
-                    </div>
+
+                        <?php
+                        // Calculate page range
+                        $delta = 2;
+                        $range = [];
+                        $rangeWithDots = [];
+                        
+                        for ($i = 1; $i <= $pageCount; $i++) {
+                            if ($i == 1 || $i == $pageCount || ($i >= $currentPage - $delta && $i <= $currentPage + $delta)) {
+                                $range[] = $i;
+                            }
+                        }
+                        
+                        // Add dots and numbers
+                        $prev = null;
+                        foreach ($range as $i) {
+                            if ($prev && $i - $prev > 1) {
+                                if ($i - $prev == 2) {
+                                    $rangeWithDots[] = $prev + 1;
+                                } else {
+                                    $rangeWithDots[] = '...';
+                                }
+                            }
+                            $rangeWithDots[] = $i;
+                            $prev = $i;
+                        }
+                        
+                        // Output page numbers and dots
+                        foreach ($rangeWithDots as $i): ?>
+                            <?php if ($i === '...'): ?>
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                    ...
+                                </span>
+                            <?php else: ?>
+                                <a href="<?= site_url('stok/bahan-baku?page=' . $i) ?>" 
+                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 <?= $i == $currentPage ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white text-gray-500 hover:bg-gray-50' ?> text-sm font-medium">
+                                    <?= $i ?>
+                                </a>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+
+                        <?php if ($currentPage < $pageCount): ?>
+                            <a href="<?= site_url('stok/bahan-baku?page=' . ($currentPage + 1)) ?>" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Next</span>
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        <?php endif; ?>
+                    </nav>
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </div>
+
+    <!-- Riwayat Transaksi -->
+    
 
     <!-- Grafik Stok -->
     <div class="mt-8 bg-white rounded-lg shadow-md p-6">
@@ -117,8 +197,16 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Bahan Baku</h3>
                     <input type="hidden" id="editItemId">
                     <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Part Number</label>
+                        <input type="text" id="editPartNumber" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" readonly>
+                    </div>
+                    <div class="mb-4">
                         <label class="block text-gray-700 text-sm font-bold mb-2">Nama Bahan</label>
                         <input type="text" id="editName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Gudang</label>
+                        <input type="text" id="editWarehouse" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" readonly>
                     </div>
                     <div class="mb-4">
                         <label class="block text-gray-700 text-sm font-bold mb-2">Stok Saat Ini</label>
@@ -199,41 +287,116 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableRows = document.querySelectorAll('tbody tr');
     
     searchInput.addEventListener('keyup', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
+        const searchTerm = e.target.value.toLowerCase().trim();
+        let visibleRowCount = 0;
         
-        tableRows.forEach(row => {
-            const namaBahan = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-            
-            // Cari berdasarkan nama bahan
-            if (namaBahan.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+        console.log('Search term:', searchTerm);
+        console.log('Total rows before filtering:', tableRows.length);
+        
+        // Debug: Log all table data
+        const tableData = [];
+        tableRows.forEach((row, index) => {
+            const cells = row.getElementsByTagName('td');
+            const rowData = {
+                index: index + 1,
+                partNumber: cells[1].textContent.trim(),
+                namaBahan: cells[2].textContent.trim(),
+                gudang: cells[3].textContent.trim(),
+                stok: cells[4].textContent.trim(),
+                minimumStok: cells[5].textContent.trim()
+            };
+            tableData.push(rowData);
+        });
+        console.log('Table data:', tableData);
+        
+        // Group rows by part number for checking duplicates
+        const groupedByPartNumber = {};
+        tableRows.forEach((row, index) => {
+            const partNumber = row.cells[1].textContent.trim();
+            if (!groupedByPartNumber[partNumber]) {
+                groupedByPartNumber[partNumber] = [];
             }
+            groupedByPartNumber[partNumber].push(row);
+        });
+        console.log('Grouped by part number:', groupedByPartNumber);
+        
+        // Iterate through each group of rows
+        Object.entries(groupedByPartNumber).forEach(([partNumber, rows]) => {
+            const shouldShow = rows.some(row => {
+                const cells = row.getElementsByTagName('td');
+                const rowData = {
+                    partNumber: cells[1].textContent.toLowerCase().trim(),
+                    namaBahan: cells[2].textContent.toLowerCase().trim(),
+                    gudang: cells[3].textContent.toLowerCase().trim()
+                };
+                
+                return rowData.partNumber.includes(searchTerm) || 
+                       rowData.namaBahan.includes(searchTerm) || 
+                       rowData.gudang.includes(searchTerm);
+            });
+            
+            // Show/hide all rows with the same part number
+            rows.forEach(row => {
+                row.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) visibleRowCount++;
+            });
         });
         
-        // Update grafik jika ada
-        if (typeof chart !== 'undefined') {
-            updateChartData(searchTerm);
+        console.log('\nSearch Results Summary:');
+        console.log('Total rows:', tableRows.length);
+        console.log('Visible rows:', visibleRowCount);
+        console.log('Hidden rows:', tableRows.length - visibleRowCount);
+        
+        // Update informasi jumlah data yang ditampilkan
+        const infoText = document.querySelector('.text-sm.text-gray-700');
+        if (infoText) {
+            if (visibleRowCount === 0) {
+                infoText.textContent = 'Tidak ada data yang sesuai dengan pencarian';
+            } else {
+                infoText.textContent = `Menampilkan ${visibleRowCount} data hasil pencarian`;
+            }
         }
+        
+        // Update grafik
+        updateChartData();
     });
     
-    function updateChartData(searchTerm) {
-        const visibleRows = Array.from(tableRows).filter(row => 
-            row.style.display !== 'none'
-        );
+    function updateChartData() {
+        const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
         
-        const labels = visibleRows.map(row => 
-            row.querySelector('td:nth-child(2)').textContent
-        );
+        console.log('\nUpdating Chart:');
+        console.log('Visible rows for chart:', visibleRows.length);
+        
+        // Debug: Log data for each visible row
+        visibleRows.forEach((row, index) => {
+            const rowData = {
+                name: row.cells[2].textContent.trim(),
+                warehouse: row.cells[3].textContent.trim(),
+                stock: parseInt(row.cells[4].textContent.replace(/[,.]/g, '')),
+                minStock: parseInt(row.cells[5].textContent.replace(/[,.]/g, ''))
+            };
+            console.log(`Chart data row ${index + 1}:`, rowData);
+        });
+        
+        const labels = visibleRows.map(row => {
+            const name = row.cells[2].textContent.trim();
+            const warehouse = row.cells[3].textContent.trim();
+            return `${name} (${warehouse})`;
+        });
         
         const stockData = visibleRows.map(row => 
-            parseFloat(row.querySelector('td:nth-child(3)').textContent.replace(/,/g, ''))
+            parseInt(row.cells[4].textContent.replace(/[,.]/g, ''))
         );
         
         const minStockData = visibleRows.map(row => 
-            parseFloat(row.querySelector('td:nth-child(5)').textContent.replace(/,/g, ''))
+            parseInt(row.cells[5].textContent.replace(/[,.]/g, ''))
         );
+        
+        console.log('Chart data:', {
+            labels,
+            stockData,
+            minStockData
+        });
         
         chart.data.labels = labels;
         chart.data.datasets[0].data = stockData;
@@ -256,15 +419,13 @@ function setupModalEvents() {
 }
 
 function editItem(item) {
-    console.log('Edit item:', item);
-    
-    // Set values to form dengan memastikan nilai integer
     document.getElementById('editItemId').value = item.id;
+    document.getElementById('editPartNumber').value = item.part_number;
     document.getElementById('editName').value = item.name;
+    document.getElementById('editWarehouse').value = item.warehouse_name || '-';
     document.getElementById('editStock').value = parseInt(item.stock);
     document.getElementById('editMinStock').value = parseInt(item.minimum_stock);
     
-    // Show modal
     document.getElementById('editModal').classList.remove('hidden');
 }
 
@@ -309,7 +470,6 @@ function updateItem(event) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Response:', data); // Debug log
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
         
