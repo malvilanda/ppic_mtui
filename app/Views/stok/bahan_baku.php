@@ -83,7 +83,7 @@
         <div class="mt-6 flex justify-between items-center px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
             <div class="flex-1 flex justify-between sm:hidden">
                 <?php 
-                $currentPage = (int)$_GET['page'] ?? 1;
+                $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
                 $pageCount = ceil($total / 8); // 8 adalah items per page
                 ?>
                 <?php if ($currentPage > 1): ?>

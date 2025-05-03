@@ -5,7 +5,6 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\TransactionBahanBakuModel;
 use CodeIgniter\Database\Database;
-use CodeIgniter\HTTP\ResponseInterface;
 
 class TransaksiController extends BaseController
 {
@@ -21,35 +20,40 @@ class TransaksiController extends BaseController
     public function generateDONumber()
     {
         try {
-            $db = \Config\Database::connect();
-            
-            // Dapatkan tahun dan bulan saat ini
+            // Format: DO/TAHUN/BULAN/NOMOR_URUT
             $year = date('Y');
             $month = date('m');
             
-            // Query untuk mendapatkan nomor urut terakhir untuk bulan ini
-            $result = $db->table('transactions')
-                        ->select('MAX(CAST(SUBSTRING_INDEX(delivery_order, "/", 1) AS UNSIGNED)) as last_number')
-                        ->where('YEAR(created_at)', $year)
-                        ->where('MONTH(created_at)', $month)
-                        ->get()
-                        ->getRow();
+            // Ambil nomor urut terakhir dari database untuk bulan ini
+            $lastDO = $this->db->table('transactions')
+                ->where('YEAR(created_at)', $year)
+                ->where('MONTH(created_at)', $month)
+                ->where('delivery_order IS NOT NULL')
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->getRowArray();
 
-            $lastNumber = $result ? (int)$result->last_number : 0;
-            $nextNumber = $lastNumber + 1;
-            
-            // Format: 001/DO/MM/YYYY
-            $doNumber = sprintf('%03d/DO/%s/%s', $nextNumber, $month, $year);
-            
+            // Set nomor urut
+            if ($lastDO) {
+                // Ambil nomor urut dari nomor DO terakhir
+                $lastNumber = (int) substr($lastDO['delivery_order'], -4);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+
+            // Format nomor DO
+            $doNumber = sprintf("DO/%s/%s/%04d", $year, $month, $newNumber);
+
             return $this->response->setJSON([
                 'success' => true,
                 'do_number' => $doNumber
             ]);
-            
+
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Gagal generate nomor DO: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ]);
         }
     }

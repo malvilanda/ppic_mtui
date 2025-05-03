@@ -112,3 +112,5 @@ $routes->get('administrator/users/add', 'Administrator::add_user', ['filter' => 
 $routes->post('administrator/users/save', 'Administrator::save_user', ['filter' => 'role:admin,supervisor,manager']);
 
 $routes->get('api/stock-data', 'Api::getStockData');
+
+$routes->get('transaksi/check-part-number/(:num)/(:num)', 'Transaksi::checkPartNumber/$1/$2');
