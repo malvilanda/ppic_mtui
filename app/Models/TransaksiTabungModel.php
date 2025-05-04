@@ -6,7 +6,7 @@ use CodeIgniter\Model;
 
 class TransaksiTabungModel extends Model
 {
-    protected $table = 'transaksi_tabung';
+    protected $table = 'transactions';
     protected $primaryKey = 'id';
     protected $allowedFields = [
         'id_tabung',
@@ -14,6 +14,10 @@ class TransaksiTabungModel extends Model
         'jumlah',
         'tanggal',
         'keterangan',
+        'client_id',
+        'delivery_address',
+        'delivery_order',
+        'status',
         'created_at',
         'updated_at'
     ];
@@ -22,8 +26,9 @@ class TransaksiTabungModel extends Model
     public function getLaporanTransaksi($tanggalAwal = null, $tanggalAkhir = null)
     {
         $builder = $this->db->table($this->table . ' t');
-        $builder->select('t.*, i.name as nama_tabung, i.part_number')
-                ->join('items_part i', 'i.id = t.id_tabung');
+        $builder->select('t.*, i.name as nama_tabung, i.part_number, c.name as client_name, c.code as client_code')
+                ->join('items_part i', 'i.id = t.id_tabung')
+                ->join('clients c', 'c.client_id = t.client_id', 'left');
 
         if ($tanggalAwal && $tanggalAkhir) {
             $builder->where('DATE(t.tanggal) >=', $tanggalAwal)
@@ -64,10 +69,23 @@ class TransaksiTabungModel extends Model
     public function getTransaksiTerbaru($limit = 5)
     {
         $builder = $this->db->table($this->table . ' t');
-        return $builder->select('t.*, i.name as nama_tabung')
+        return $builder->select('t.*, i.name as nama_tabung, c.name as client_name, c.code as client_code')
                       ->join('items_part i', 'i.id = t.id_tabung')
+                      ->join('clients c', 'c.id = t.client_id', 'left')
                       ->orderBy('t.tanggal', 'DESC')
                       ->limit($limit)
+                      ->get()
+                      ->getResultArray();
+    }
+
+    // Method untuk mendapatkan semua transaksi dengan detail
+    public function getAllTransaksi()
+    {
+        $builder = $this->db->table($this->table . ' t');
+        return $builder->select('t.*, i.name as nama_tabung, c.name as client_name, c.code as client_code')
+                      ->join('items_part i', 'i.id = t.id_tabung')
+                      ->join('clients c', 'c.id = t.client_id', 'left')
+                      ->orderBy('t.tanggal', 'DESC')
                       ->get()
                       ->getResultArray();
     }

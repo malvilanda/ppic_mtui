@@ -114,4 +114,74 @@ class Administrator extends BaseController
                 ->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
     }
+
+    public function userHistory()
+    {
+        $userHistoryModel = new \App\Models\UserHistoryModel();
+        
+        $data = [
+            'title' => 'Riwayat User',
+            'history' => $userHistoryModel->getUserHistory()
+        ];
+        
+        return view('administrator/user_history', $data);
+    }
+
+    public function exportUserHistory()
+    {
+        $userHistoryModel = new \App\Models\UserHistoryModel();
+        $history = $userHistoryModel->getUserHistory();
+        
+        // Create new Spreadsheet object
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set column headers
+        $sheet->setCellValue('A1', 'No');
+        $sheet->setCellValue('B1', 'Waktu Login');
+        $sheet->setCellValue('C1', 'Username');
+        $sheet->setCellValue('D1', 'Status');
+        $sheet->setCellValue('E1', 'IP Address');
+        $sheet->setCellValue('F1', 'MAC Address');
+        $sheet->setCellValue('G1', 'Lokasi');
+        $sheet->setCellValue('H1', 'Browser');
+        
+        // Style the header
+        $headerStyle = [
+            'font' => ['bold' => true],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E2E8F0']
+            ]
+        ];
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        
+        // Populate data
+        $row = 2;
+        foreach ($history as $index => $item) {
+            $sheet->setCellValue('A' . $row, $index + 1);
+            $sheet->setCellValue('B' . $row, date('d/m/Y H:i:s', strtotime($item['login_time'])));
+            $sheet->setCellValue('C' . $row, $item['username']);
+            $sheet->setCellValue('D' . $row, $item['status'] == 'success' ? 'Berhasil' : 'Gagal');
+            $sheet->setCellValue('E' . $row, $item['ip_address']);
+            $sheet->setCellValue('F' . $row, $item['mac_address'] ?? '-');
+            $sheet->setCellValue('G' . $row, $item['location'] ?? '-');
+            $sheet->setCellValue('H' . $row, $item['user_agent'] ?? '-');
+            $row++;
+        }
+        
+        // Auto-size columns
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        
+        // Create writer and output file
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="riwayat_login_user.xlsx"');
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit();
+    }
 } 

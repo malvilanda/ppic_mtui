@@ -16,46 +16,176 @@
     <!-- Bootstrap Icons -->
     <link href="/assets/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .nav-dropdown {
-            transition: all 0.2s ease-in-out;
+        /* Navigation Styles */
+        .nav-container {
+            position: relative;
+            z-index: 40;
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
         }
-        .nav-dropdown-content {
-            transform-origin: top;
-            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
-            opacity: 0;
-            transform: scaleY(0);
-            visibility: hidden;
-        }
-        .nav-dropdown-content.show {
-            opacity: 1;
-            transform: scaleY(1);
-            visibility: visible;
-        }
-        .nav-link {
+
+        .nav-item {
             position: relative;
             height: 64px;
             display: flex;
             align-items: center;
+            margin: 0 0.25rem;
         }
-        .nav-link::after {
-            content: '';
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4B5563;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-link:hover {
+            color: #1F2937;
+            background-color: #F3F4F6;
+        }
+
+        .nav-link.active {
+            color: #2563EB;
+            background-color: #EBF5FF;
+        }
+
+        .nav-link i {
+            margin-right: 0.5rem;
+            font-size: 1rem;
+        }
+
+        /* Dropdown Styles */
+        .nav-dropdown {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .nav-dropdown-content {
             position: absolute;
-            width: 100%;
-            height: 2px;
-            bottom: 0;
-            left: 0;
-            background-color: #3b82f6;
-            transform: scaleX(0);
-            transition: transform 0.2s ease-in-out;
+            top: calc(100% + 0.25rem);
+            right: 0;
+            min-width: 240px;
+            padding: 0.5rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s ease-in-out;
+            z-index: 50;
         }
-        .nav-link.active::after,
-        .nav-link:hover::after {
-            transform: scaleX(1);
+
+        .nav-dropdown-content.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
         }
-        .nav-item {
-            height: 64px;
+
+        .nav-dropdown-content a {
             display: flex;
             align-items: center;
+            padding: 0.625rem 1rem;
+            color: #4B5563;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .nav-dropdown-content a:hover {
+            color: #2563EB;
+            background-color: #EBF5FF;
+        }
+
+        .nav-dropdown-content a i {
+            width: 1.25rem;
+            margin-right: 0.75rem;
+            font-size: 1rem;
+            color: #6B7280;
+        }
+
+        .nav-dropdown-content a:hover i {
+            color: #2563EB;
+        }
+
+        /* Profile Menu */
+        .profile-menu {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .profile-menu:hover {
+            background-color: #F3F4F6;
+        }
+
+        .profile-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background: linear-gradient(to right, #3B82F6, #2563EB);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+            margin-right: 0.75rem;
+        }
+
+        .profile-info {
+            margin-right: 0.5rem;
+        }
+
+        .profile-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1F2937;
+        }
+
+        .profile-role {
+            font-size: 0.75rem;
+            color: #6B7280;
+        }
+
+        /* Mobile Menu */
+        @media (max-width: 640px) {
+            .mobile-menu {
+                background-color: white;
+                border-top: 1px solid #E5E7EB;
+                padding: 0.5rem 0;
+            }
+
+            .mobile-menu a {
+                display: flex;
+                align-items: center;
+                padding: 0.75rem 1.5rem;
+                color: #4B5563;
+                font-size: 0.875rem;
+                font-weight: 500;
+            }
+
+            .mobile-menu a:hover {
+                background-color: #F3F4F6;
+                color: #2563EB;
+            }
+
+            .mobile-menu a i {
+                width: 1.5rem;
+                margin-right: 0.75rem;
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -113,7 +243,7 @@
                         <!-- Transaksi Dropdown -->
                         <div class="nav-item">
                             <div class="relative nav-dropdown">
-                                <button class="nav-link <?= strpos(current_url(), base_url('transaksi')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium" id="transaksi-menu-button">
+                                <button class="nav-link <?= strpos(current_url(), base_url('transaksi')) === 0 || strpos(current_url(), base_url('approval')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium" id="transaksi-menu-button">
                                     <i class="fas fa-exchange-alt mr-2"></i>
                                     Transaksi
                                     <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
@@ -121,76 +251,59 @@
                                     </svg>
                                 </button>
                                 <div class="nav-dropdown-content absolute z-10 mt-0 w-48 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5" id="transaksi-menu">
-                                    <a href="<?= base_url('transaksi/tabung') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-flask mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Transaksi Tabung
-                                    </a>
                                     <a href="<?= base_url('transaksi/bahan-baku') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                         <i class="fas fa-box mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Transaksi Bahan Baku
+                                        Bahan Baku
                                     </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Delivery Order -->
-                        <!-- <div class="nav-item">
-                            <div class="relative nav-dropdown">
-                                <button class="nav-link <?= strpos(current_url(), base_url('delivery-order')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium" id="delivery-order-menu-button">
-                                    <i class="fas fa-truck mr-2"></i>
-                                    Surat Jalan
-                                    <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                                    </svg>
-                                </button>
-                                <div class="nav-dropdown-content absolute z-10 mt-0 w-48 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5" id="delivery-order-menu">
-                                    <a href="<?= base_url('delivery-order') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-list mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Daftar Surat Jalan
-                                    </a>
-                                    <a href="<?= base_url('delivery-order/create') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-plus mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Buat Surat Jalan
-                                    </a>
-                                </div>
-                            </div>
-                        </div> -->
-
-                        <!-- Delivery Approval -->
-                        <?php 
-                        // Debug role user
-                        $userRole = session()->get('role');
-                        ?>
-                        <?php if (in_array($userRole, ['manager', 'admin'])): ?>
-                        <div class="nav-item">
-                            <div class="relative nav-dropdown">
-                                <button class="nav-link <?= strpos(current_url(), base_url('approval')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium" id="approval-menu-button">
-                                    <i class="fas fa-clipboard-check mr-2"></i>
-                                    Persetujuan
-                                    <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                                    </svg>
-                                </button>
-                                <div class="nav-dropdown-content absolute z-10 mt-0 w-48 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5" id="approval-menu">
-                                    <a href="<?= base_url('approval/delivery') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-truck mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Persetujuan Surat Jalan
+                                    <a href="<?= base_url('transaksi/tabung') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-flask mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Tabung
                                     </a>
                                     <a href="<?= base_url('approval/transaksi') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-exchange-alt mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Persetujuan Transaksi
+                                        <i class="fas fa-check-circle mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Persetujuan
                                     </a>
                                 </div>
                             </div>
                         </div>
-                        <?php endif; ?>
+
+                        <!-- Laporan Dropdown -->
+                        <div class="nav-item">
+                            <div class="relative nav-dropdown">
+                                <button class="nav-link <?= strpos(current_url(), base_url('laporan')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium" id="laporan-menu-button">
+                                    <i class="fas fa-file-alt mr-2"></i>
+                                    Laporan
+                                    <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                    </svg>
+                                </button>
+                                <div class="nav-dropdown-content absolute z-10 mt-0 w-48 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5" id="laporan-menu">
+                                    <a href="<?= base_url('laporan/dashboard') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-chart-bar mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Dashboard
+                                    </a>
+                                    <a href="<?= base_url('laporan/bahan-baku') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-box mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Bahan Baku
+                                    </a>
+                                    <a href="<?= base_url('laporan/tabung') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-flask mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Tabung
+                                    </a>
+                                    <a href="<?= base_url('laporan/stok-opname') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-clipboard-check mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Stok Opname
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Master Data Dropdown -->
                         <div class="nav-item">
                             <div class="relative nav-dropdown">
                                 <button class="nav-link <?= strpos(current_url(), base_url('master')) === 0 ? 'active text-blue-600' : 'text-gray-500 hover:text-gray-900' ?> inline-flex items-center px-3 text-sm font-medium" id="master-menu-button">
                                     <i class="fas fa-database mr-2"></i>
-                                    Master Data
+                                    Master
                                     <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
                                     </svg>
@@ -211,6 +324,8 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Administrator Dropdown -->
                         <?php if (in_array(session()->get('role'), ['admin', 'supervisor', 'manager'])): ?>
                         <div class="nav-item">
                             <div class="relative nav-dropdown">
@@ -225,6 +340,10 @@
                                     <a href="<?= base_url('administrator/users') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                         <i class="fas fa-users mr-3 text-gray-400 group-hover:text-blue-500"></i>
                                         Tambah User
+                                    </a>
+                                    <a href="<?= base_url('administrator/user-history') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-history mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Riwayat User
                                     </a>
                                 </div>
                             </div>
@@ -314,7 +433,7 @@
 
                 <!-- Transaksi Mobile -->
                 <div class="mobile-dropdown">
-                    <button class="w-full text-left <?= strpos(current_url(), base_url('transaksi')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> flex items-center justify-between pl-3 pr-4 py-2 border-l-4 text-base font-medium" data-target="transaksi-mobile-menu">
+                    <button class="w-full text-left <?= strpos(current_url(), base_url('transaksi')) === 0 || strpos(current_url(), base_url('approval')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> flex items-center justify-between pl-3 pr-4 py-2 border-l-4 text-base font-medium" data-target="transaksi-mobile-menu">
                         <div class="flex items-center">
                             <i class="fas fa-exchange-alt mr-2"></i>
                             Transaksi
@@ -324,13 +443,17 @@
                         </svg>
                     </button>
                     <div class="hidden bg-gray-50" id="transaksi-mobile-menu">
-                        <a href="<?= base_url('transaksi/tabung') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
-                            <i class="fas fa-flask mr-2"></i>
-                            Transaksi Tabung
-                        </a>
                         <a href="<?= base_url('transaksi/bahan-baku') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
                             <i class="fas fa-box mr-2"></i>
-                            Transaksi Bahan Baku
+                            Bahan Baku
+                        </a>
+                        <a href="<?= base_url('transaksi/tabung') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-flask mr-2"></i>
+                            Tabung
+                        </a>
+                        <a href="<?= base_url('approval/transaksi') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Persetujuan
                         </a>
                     </div>
                 </div>
@@ -358,31 +481,6 @@
                     </div>
                 </div>
 
-                <!-- Delivery Approval Mobile -->
-                <?php if (in_array($userRole, ['manager', 'admin'])): ?>
-                <div class="mobile-dropdown">
-                    <button class="w-full text-left <?= strpos(current_url(), base_url('approval')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> flex items-center justify-between pl-3 pr-4 py-2 border-l-4 text-base font-medium" data-target="approval-mobile-menu">
-                        <div class="flex items-center">
-                            <i class="fas fa-clipboard-check mr-2"></i>
-                            Persetujuan
-                        </div>
-                        <svg class="h-5 w-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                        </svg>
-                    </button>
-                    <div class="hidden bg-gray-50" id="approval-mobile-menu">
-                        <a href="<?= base_url('approval/delivery') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
-                            <i class="fas fa-truck mr-2"></i>
-                            Persetujuan Surat Jalan
-                        </a>
-                        <a href="<?= base_url('approval/transaksi') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
-                            <i class="fas fa-exchange-alt mr-2"></i>
-                            Persetujuan Transaksi
-                        </a>
-                    </div>
-                </div>
-                <?php endif; ?>
-
                 <!-- Master Data Mobile -->
                 <div class="mobile-dropdown">
                     <button class="w-full text-left <?= strpos(current_url(), base_url('master')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> flex items-center justify-between pl-3 pr-4 py-2 border-l-4 text-base font-medium" data-target="master-mobile-menu">
@@ -406,6 +504,37 @@
                         <a href="<?= base_url('master/bahan-baku') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
                             <i class="fas fa-box mr-2"></i>
                             Data Bahan Baku
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Laporan Mobile -->
+                <div class="mobile-dropdown">
+                    <button class="w-full text-left <?= strpos(current_url(), base_url('laporan')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> flex items-center justify-between pl-3 pr-4 py-2 border-l-4 text-base font-medium" data-target="laporan-mobile-menu">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-alt mr-2"></i>
+                            Laporan
+                        </div>
+                        <svg class="h-5 w-5 transform transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                        </svg>
+                    </button>
+                    <div class="hidden bg-gray-50" id="laporan-mobile-menu">
+                        <a href="<?= base_url('laporan/dashboard') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            Dashboard
+                        </a>
+                        <a href="<?= base_url('laporan/bahan-baku') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-box mr-2"></i>
+                            Bahan Baku
+                        </a>
+                        <a href="<?= base_url('laporan/tabung') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-flask mr-2"></i>
+                            Tabung
+                        </a>
+                        <a href="<?= base_url('laporan/stok-opname') ?>" class="block pl-8 pr-4 py-2 text-base text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                            <i class="fas fa-clipboard-check mr-2"></i>
+                            Stok Opname
                         </a>
                     </div>
                 </div>
@@ -512,80 +641,27 @@
         }
 
         // Desktop dropdowns
-        ['stok', 'transaksi', 'master', 'delivery-order', 'administrator', 'approval'].forEach(menu => {
+        ['stok', 'transaksi', 'master', 'delivery-order', 'administrator', 'approval', 'laporan'].forEach(menu => {
             const button = document.getElementById(`${menu}-menu-button`);
             const dropdown = document.getElementById(`${menu}-menu`);
             
             if (button && dropdown) {
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const isActive = dropdown.classList.contains('show');
-                    
-                    // Close all dropdowns first
-                    document.querySelectorAll('.nav-dropdown-content').forEach(d => {
-                        d.classList.remove('show');
-                        const btn = d.previousElementSibling;
-                        if (btn) {
-                            btn.querySelector('svg')?.classList.remove('rotate-180');
+                button.addEventListener('click', () => {
+                    dropdown.classList.toggle('show');
+                    // Close other dropdowns
+                    document.querySelectorAll('.nav-dropdown-content').forEach(dropdown => {
+                        if (dropdown !== dropdown) {
+                            dropdown.classList.remove('show');
                         }
                     });
-                    
-                    // Toggle current dropdown
-                    if (!isActive) {
-                        dropdown.classList.add('show');
-                        button.querySelector('svg').classList.add('rotate-180');
-                    }
-                    
-                    // Close user menu
-                    userMenu.classList.add('hidden');
                 });
             }
         });
-
-        // Mobile dropdowns
-        document.querySelectorAll('.mobile-dropdown button').forEach(button => {
-            button.addEventListener('click', () => {
-                const targetId = button.getAttribute('data-target');
-                const targetMenu = document.getElementById(targetId);
-                const arrow = button.querySelector('svg');
-                
-                if (targetMenu) {
-                    const isHidden = targetMenu.classList.contains('hidden');
-                    
-                    // Close all other mobile dropdowns
-                    document.querySelectorAll('.mobile-dropdown .hidden').forEach(menu => {
-                        if (menu !== targetMenu) {
-                            menu.classList.add('hidden');
-                            const otherArrow = menu.previousElementSibling.querySelector('svg');
-                            otherArrow.classList.remove('rotate-180');
-                        }
-                    });
-                    
-                    // Toggle current dropdown
-                    targetMenu.classList.toggle('hidden');
-                    if (isHidden) {
-                        arrow.classList.add('rotate-180');
-                    } else {
-                        arrow.classList.remove('rotate-180');
-                    }
-                }
-            });
-        });
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', () => {
-            // Close desktop dropdowns
-            document.querySelectorAll('.nav-dropdown-content').forEach(dropdown => {
-                dropdown.classList.remove('show');
-                const button = dropdown.previousElementSibling;
-                if (button) {
-                    button.querySelector('svg')?.classList.remove('rotate-180');
-                }
-            });
-            
-            // Close user menu
-            userMenu.classList.add('hidden');
-        });
     </script>
+
+    <!-- Session Timeout Script -->
+    <?php if (session()->get('logged_in')): ?>
+    <script src="<?= base_url('assets/js/session-timeout.js') ?>"></script>
+    <?php endif; ?>
 </body>
-</html> 
+</html>

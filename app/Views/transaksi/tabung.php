@@ -4,6 +4,20 @@
 
 <script src="https://kit.fontawesome.com/your-kit-code.js" crossorigin="anonymous"></script>
 
+<style>
+.transition-section {
+    transition: all 0.3s ease-in-out;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.transition-section.show {
+    max-height: 500px;
+    opacity: 1;
+}
+</style>
+
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-2xl font-semibold mb-6">Transaksi Tabung Gas</h2>
@@ -42,7 +56,7 @@
                 </div>
 
                 <!-- Client Pembeli (hanya muncul jika transaksi keluar) -->
-                <div id="clientSection" class="hidden">
+                <div id="clientSection" class="transition-section">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Client</label>
                     <select name="client_id" id="clientSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         <option value="">Pilih Client</option>
@@ -139,61 +153,68 @@
     </div>
 
     <!-- Tabel Riwayat Transaksi -->
-    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-xl font-semibold mb-4">Riwayat Transaksi Tabung</h3>
+    <div class="mt-8 bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-xl font-bold text-gray-900">Riwayat Transaksi Tabung</h3>
+        </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead>
-                    <tr class="bg-gray-50">
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[120px]">Delivery Order</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[160px]">Tanggal</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[200px]">Tipe</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[100px]">Transaksi</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[200px]">Client</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[250px]">Lokasi</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[150px]">Gudang</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[100px]">Jumlah</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[120px]">Status</th>
-                        <th class="px-8 py-4 text-left text-xs font-medium text-gray-500 uppercase min-w-[150px]">Surat jalan</th>
+                    <tr>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Delivery Order</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tipe</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Transaksi</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Client</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Lokasi</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Gudang</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jumlah</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="sticky top-0 px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Surat Jalan</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php if(empty($transactions)): ?>
                         <tr>
-                            <td colspan="10" class="px-8 py-6 text-center text-gray-500">
-                                Tidak ada data transaksi
+                            <td colspan="10" class="px-6 py-8 text-center text-sm text-gray-500 bg-gray-50">
+                                <div class="flex flex-col items-center justify-center space-y-2">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                    </svg>
+                                    <p>Tidak ada data transaksi</p>
+                                </div>
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($transactions as $trans): ?>
-                        <tr class="<?= ($trans['status'] ?? '') === 'pending' ? 'bg-yellow-50' : (($trans['status'] ?? '') === 'approve' ? 'bg-green-50' : '') ?>">
-                            <td class="px-8 py-6 whitespace-nowrap"><?= $trans['delivery_order'] ?></td>
-                            <td class="px-8 py-6 whitespace-nowrap"><?= date('d/m/Y H:i:s', strtotime($trans['transaction_date'])) ?></td>
-                            <td class="px-8 py-6"><?= $trans['item_name'] ?></td>
-                            <td class="px-8 py-6">
-                                <span class="px-3 py-2 text-xs font-semibold rounded-full <?= $trans['type'] === 'masuk' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
+                        <tr class="hover:bg-gray-50 transition-colors duration-200 ease-in-out <?= ($trans['status'] ?? '') === 'pending' ? 'bg-yellow-50' : (($trans['status'] ?? '') === 'approve' ? 'bg-green-50/50' : '') ?>">
+                            <td class="px-6 py-4 text-sm text-gray-900 font-medium"><?= $trans['delivery_order'] ?></td>
+                            <td class="px-6 py-4 text-sm text-gray-600"><?= date('d/m/Y H:i:s', strtotime($trans['transaction_date'])) ?></td>
+                            <td class="px-6 py-4 text-sm text-gray-900"><?= $trans['item_name'] . ' - ' . $trans['kategori_tabung'] ?></td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium <?= $trans['type'] === 'masuk' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
                                     <?= ucfirst($trans['type']) ?>
                                 </span>
                             </td>
-                            <td class="px-8 py-6"><?= $trans['client_name'] ?></td>
-                            <td class="px-8 py-6"><?= $trans['delivery_address'] ?? '-' ?></td>
-                            <td class="px-8 py-6"><?= $trans['warehouse_name'] ?></td>
-                            <td class="px-8 py-6 text-right"><?= number_format($trans['quantity']) ?></td>
-                            <td class="px-8 py-6">
-                                <span class="px-3 py-2 text-xs font-semibold rounded-full <?= ($trans['status'] ?? '') === 'pending' ? 'bg-red-100 text-red-800' : (($trans['status'] ?? '') === 'approve' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800') ?>">
-                                    <?= $trans['status'] ?? '-' ?>
+                            <td class="px-6 py-4 text-sm text-gray-600"><?= $trans['type'] === 'keluar' ? ($trans['client_name'] ?? '-') : '-' ?></td>
+                            <td class="px-6 py-4 text-sm text-gray-600"><?= $trans['delivery_address'] ?? '-' ?></td>
+                            <td class="px-6 py-4 text-sm text-gray-600"><?= $trans['warehouse_name'] ?></td>
+                            <td class="px-6 py-4 text-sm text-gray-900 font-medium text-right"><?= number_format($trans['quantity']) ?></td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium <?= ($trans['status'] ?? '') === 'pending' ? 'bg-yellow-100 text-yellow-800' : (($trans['status'] ?? '') === 'approve' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800') ?>">
+                                    <?= ucfirst($trans['status'] ?? '-') ?>
                                 </span>
                             </td>
-                            <td class="px-8 py-6">
+                            <td class="px-6 py-4">
                                 <?php if (($trans['status'] ?? '') === 'pending'): ?>
-                                    <button disabled class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-gray-200 rounded-md cursor-not-allowed">
-                                        <i class="fas fa-print mr-2"></i>
+                                    <button disabled class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed transition-colors duration-200">
+                                        <i class="fas fa-print mr-1.5 text-gray-400"></i>
                                         Cetak
                                     </button>
                                 <?php else: ?>
                                     <a href="/transaksi/delivery-order/<?= $trans['id'] ?>" 
-                                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                                        <i class="fas fa-print mr-2"></i>
+                                       class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                        <i class="fas fa-print mr-1.5"></i>
                                         Cetak
                                     </a>
                                 <?php endif; ?>
@@ -203,6 +224,54 @@
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Tambahkan modal konfirmasi -->
+<div id="confirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Konfirmasi Transaksi</h3>
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="text-gray-600">Jenis Transaksi:</div>
+                <div id="confirmType" class="font-medium text-gray-900"></div>
+                
+                <div class="text-gray-600">Jenis Tabung:</div>
+                <div id="confirmItem" class="font-medium text-gray-900"></div>
+                
+                <div class="text-gray-600">Jumlah:</div>
+                <div id="confirmQuantity" class="font-medium text-gray-900"></div>
+                
+                <div class="text-gray-600">Gudang:</div>
+                <div id="confirmWarehouse" class="font-medium text-gray-900"></div>
+                
+                <div id="confirmClientRow" class="contents">
+                    <div class="text-gray-600">Client:</div>
+                    <div id="confirmClient" class="font-medium text-gray-900"></div>
+                </div>
+                
+                <div id="confirmAddressRow" class="contents">
+                    <div class="text-gray-600">Alamat:</div>
+                    <div id="confirmAddress" class="font-medium text-gray-900"></div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-200 pt-4">
+                <p class="text-sm text-gray-600">
+                    Pastikan semua data yang dimasukkan sudah benar sebelum melanjutkan.
+                </p>
+            </div>
+        </div>
+        <div class="mt-6 flex justify-end space-x-3">
+            <button type="button" id="cancelTransaction" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                Batal
+            </button>
+            <button type="button" id="confirmTransaction" 
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Konfirmasi
+            </button>
         </div>
     </div>
 </div>
@@ -224,14 +293,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const stockWarning = document.getElementById('stockWarning');
     const quantityInput = document.querySelector('input[name="quantity"]');
 
-    // Function to toggle sections
+    // Function to toggle sections with animation
     function toggleSections() {
         const isOutgoing = transactionType.value === 'keluar';
-        clientSection.classList.toggle('hidden', !isOutgoing);
-        addressSection.classList.toggle('hidden', !isOutgoing);
-        deliveryDetailSection.classList.toggle('hidden', !isOutgoing);
-        doSection.classList.toggle('hidden', !isOutgoing);
-        categorySection.classList.toggle('hidden', !isOutgoing);
+        const sections = [clientSection, addressSection, deliveryDetailSection, doSection, categorySection];
+        
+        sections.forEach(section => {
+            if (isOutgoing) {
+                section.classList.remove('hidden');
+                setTimeout(() => section.classList.add('show'), 10);
+            } else {
+                section.classList.remove('show');
+                setTimeout(() => section.classList.add('hidden'), 300);
+            }
+        });
         
         clientSelect.required = isOutgoing;
         deliveryAddress.required = isOutgoing;
@@ -285,40 +360,119 @@ document.addEventListener('DOMContentLoaded', function() {
     itemSelect.addEventListener('change', checkStock);
     quantityInput.addEventListener('input', checkStock);
 
-    // Form validation
+    // Form submission handling
     form.addEventListener('submit', function(e) {
-        if (transactionType.value === 'keluar') {
-            if (!checkStock()) {
-                e.preventDefault();
-                alert('Stok tidak mencukupi untuk transaksi keluar');
-                return;
+        e.preventDefault();
+        
+        if (validateForm()) {
+            showConfirmationModal();
+        }
+    });
+    
+    function validateForm() {
+        // Reset validation messages
+        document.querySelectorAll('.validation-message').forEach(el => el.remove());
+        
+        let isValid = true;
+        
+        // Validate required fields
+        form.querySelectorAll('[required]').forEach(field => {
+            if (!field.value) {
+                isValid = false;
+                showError(field, 'Field ini harus diisi');
             }
-            
-            const receiverName = document.querySelector('input[name="receiver_name"]');
-            const receiverPhone = document.querySelector('input[name="receiver_phone"]');
-            const deliveryOrder = document.querySelector('input[name="delivery_order"]');
-            
-            if (!receiverName.value.trim()) {
-                e.preventDefault();
-                alert('PIC Penerima harus diisi');
-                receiverName.focus();
-                return;
+        });
+        
+        // Validate quantity
+        if (quantityInput.value) {
+            const qty = parseInt(quantityInput.value);
+            if (transactionType.value === 'keluar') {
+                const selectedItem = itemSelect.options[itemSelect.selectedIndex];
+                const stock = parseInt(selectedItem.dataset.stock);
+                if (qty > stock) {
+                    isValid = false;
+                    showError(quantityInput, 'Jumlah melebihi stok yang tersedia');
+                }
             }
-            
-            if (!receiverPhone.value.trim()) {
-                e.preventDefault();
-                alert('No. Telepon Penerima harus diisi');
-                receiverPhone.focus();
-                return;
-            }
-            
-            if (!deliveryOrder.value.trim()) {
-                e.preventDefault();
-                alert('Nomor Delivery Order harus diisi');
-                deliveryOrder.focus();
-                return;
+            if (qty <= 0) {
+                isValid = false;
+                showError(quantityInput, 'Jumlah harus lebih dari 0');
             }
         }
+        
+        // Validate phone number format
+        const phoneInput = document.querySelector('input[name="receiver_phone"]');
+        if (phoneInput.value && !/^[0-9+\-\s()]*$/.test(phoneInput.value)) {
+            isValid = false;
+            showError(phoneInput, 'Format nomor telepon tidak valid');
+        }
+        
+        return isValid;
+    }
+    
+    function showConfirmationModal() {
+        const modal = document.getElementById('confirmationModal');
+        const type = transactionType.value;
+        const item = itemSelect.options[itemSelect.selectedIndex].text;
+        const warehouse = document.querySelector('select[name="warehouse_id"]').options[document.querySelector('select[name="warehouse_id"]').selectedIndex].text;
+        const quantity = quantityInput.value;
+        
+        document.getElementById('confirmType').textContent = type === 'masuk' ? 'Masuk' : 'Keluar';
+        document.getElementById('confirmItem').textContent = item;
+        document.getElementById('confirmWarehouse').textContent = warehouse;
+        document.getElementById('confirmQuantity').textContent = quantity;
+        
+        if (type === 'keluar') {
+            const client = clientSelect.options[clientSelect.selectedIndex].text;
+            const address = deliveryAddress.options[deliveryAddress.selectedIndex].text;
+            document.getElementById('confirmClient').textContent = client;
+            document.getElementById('confirmAddress').textContent = address;
+            document.getElementById('confirmClientRow').classList.remove('hidden');
+            document.getElementById('confirmAddressRow').classList.remove('hidden');
+        } else {
+            document.getElementById('confirmClientRow').classList.add('hidden');
+            document.getElementById('confirmAddressRow').classList.add('hidden');
+        }
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+    
+    // Modal event listeners
+    document.getElementById('cancelTransaction').addEventListener('click', function() {
+        const modal = document.getElementById('confirmationModal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    });
+    
+    document.getElementById('confirmTransaction').addEventListener('click', function() {
+        const modal = document.getElementById('confirmationModal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        form.submit();
+    });
+
+    // Real-time stock validation
+    function checkStock() {
+        if (transactionType.value === 'keluar' && itemSelect.value && quantityInput.value) {
+            const selectedItem = itemSelect.options[itemSelect.selectedIndex];
+            const stock = parseInt(selectedItem.dataset.stock);
+            const qty = parseInt(quantityInput.value);
+            
+            stockWarning.classList.toggle('hidden', qty <= stock);
+            quantityInput.classList.toggle('border-red-500', qty > stock);
+        }
+    }
+
+    // Add event listeners for real-time validation
+    quantityInput.addEventListener('input', checkStock);
+    itemSelect.addEventListener('change', checkStock);
+    
+    // Format phone number as typed
+    const phoneInput = document.querySelector('input[name="receiver_phone"]');
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/[^\d+\-\s()]/g, '');
+        e.target.value = value;
     });
 
     // Function to show loading state

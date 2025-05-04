@@ -222,14 +222,16 @@ class ItemModel extends Model
             
             $builder = $this->db->table('items_part');
             $builder->select('
-                id,
-                part_number,
-                name,
-                stock,
-                minimum_stock,
-                updated_at
+                items_part.id,
+                items_part.part_number,
+                items_part.name,
+                items_part.stock,
+                items_part.minimum_stock,
+                items_part.updated_at,
+                warehouses.name as warehouse_name
             ');
-            $builder->orderBy('name', 'ASC');
+            $builder->join('warehouses', 'warehouses.id = items_part.warehouse_id', 'left');
+            $builder->orderBy('items_part.name', 'ASC');
             
             // Get total rows for pagination
             $total = $builder->countAllResults(false);
@@ -238,15 +240,23 @@ class ItemModel extends Model
             $items = $builder->limit($perPage, $offset)->get()->getResultArray();
             
             // Set up pagination
-            $this->pager = service('pager');
-            $this->pager->setPath('stok/bahan-baku');
-            $this->pager->makeLinks($currentPage, $perPage, $total);
+            $pager = service('pager');
+            $pager->setPath('stok/bahan-baku');
+            $pager->makeLinks($currentPage, $perPage, $total);
             
-            return $items;
+            return [
+                'items' => $items,
+                'pager' => $pager,
+                'total' => $total
+            ];
             
         } catch (\Exception $e) {
             log_message('error', 'Error in getBahanBakuItems: ' . $e->getMessage());
-            return [];
+            return [
+                'items' => [],
+                'pager' => null,
+                'total' => 0
+            ];
         }
     }
 

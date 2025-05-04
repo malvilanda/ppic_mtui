@@ -104,9 +104,8 @@ $currentPath = $uri->getPath();
                                 </button>
                                 <div id="laporanDropdown" class="hidden absolute top-full left-0 mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                                     <div class="py-1" role="menu">
-                                        <a href="<?= base_url('dashboard/laporan-bahan-baku') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Laporan Bahan Baku</a>
-                                        <a href="<?= base_url('dashboard/laporan-tabung') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Laporan Tabung</a>
-                                        <a href="<?= base_url('dashboard/laporan-transaksi-tabung') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Transaksi Tabung</a>
+                                        <a href="<?= base_url('laporan/bahanbaku') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Laporan Bahan Baku</a>
+                                        <a href="<?= base_url('laporan/tabung') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Laporan Tabung</a>
                                         <a href="<?= base_url('laporan/stok-opname') ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Stok Opname</a>
                                     </div>
                                 </div>

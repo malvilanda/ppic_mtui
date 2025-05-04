@@ -45,6 +45,7 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php 
                     $no = 1 + (8 * ((int)$current_page - 1));
+                    if (isset($items) && is_array($items)):
                     foreach ($items as $item): 
                     ?>
                         <tr>
@@ -73,19 +74,31 @@
                                 </button>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php 
+                    endforeach;
+                    else:
+                    ?>
+                        <tr>
+                            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+                                Tidak ada data bahan baku yang tersedia
+                            </td>
+                        </tr>
+                    <?php 
+                    endif;
+                    ?>
                 </tbody>
             </table>
         </div>
 
         <!-- Pagination -->
-        <?php if ($pager): ?>
+        <?php 
+        $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $pageCount = isset($total) ? ceil($total / 8) : 1; // 8 adalah items per page
+        
+        if (isset($pager) && $pager): 
+        ?>
         <div class="mt-6 flex justify-between items-center px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
             <div class="flex-1 flex justify-between sm:hidden">
-                <?php 
-                $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-                $pageCount = ceil($total / 8); // 8 adalah items per page
-                ?>
                 <?php if ($currentPage > 1): ?>
                     <a href="<?= site_url('stok/bahan-baku?page=' . ($currentPage - 1)) ?>" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         Previous
@@ -103,9 +116,9 @@
                         Menampilkan
                         <span class="font-medium"><?= (($currentPage - 1) * 8) + 1 ?></span>
                         sampai
-                        <span class="font-medium"><?= min($currentPage * 8, $total) ?></span>
+                        <span class="font-medium"><?= min($currentPage * 8, $total ?? 0) ?></span>
                         dari
-                        <span class="font-medium"><?= $total ?></span>
+                        <span class="font-medium"><?= $total ?? 0 ?></span>
                         data
                     </p>
                 </div>
@@ -244,43 +257,45 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Setup Chart
     const ctx = document.getElementById('stockChart').getContext('2d');
-    const items = <?= json_encode($items) ?>;
+    const items = <?= isset($items) ? json_encode($items) : '[]' ?>;
     
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: items.map(item => item.name),
-            datasets: [
-                {
-                    label: 'Stok Saat Ini',
-                    data: items.map(item => item.stock),
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    borderColor: 'rgb(59, 130, 246)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Minimum Stok',
-                    data: items.map(item => item.minimum_stock),
-                    backgroundColor: 'rgba(239, 68, 68, 0.5)',
-                    borderColor: 'rgb(239, 68, 68)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+    if (items.length > 0) {
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: items.map(item => item.name),
+                datasets: [
+                    {
+                        label: 'Stok Saat Ini',
+                        data: items.map(item => item.stock),
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Minimum Stok',
+                        data: items.map(item => item.minimum_stock),
+                        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        borderWidth: 1
+                    }
+                ]
             },
-            plugins: {
-                legend: {
-                    position: 'top'
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 
     // Setup search input
     const searchInput = document.getElementById('searchInput');

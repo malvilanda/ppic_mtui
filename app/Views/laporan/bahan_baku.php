@@ -1,93 +1,248 @@
-<?= $this->include('dashboard/header') ?>
+<?= $this->extend('layout/template'); ?>
 
+<?= $this->section('content'); ?>
 <div class="container mx-auto px-4 py-8">
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-semibold">Laporan Stok Bahan Baku</h2>
-            <button onclick="exportToExcel()" 
-                    class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                <i class="fas fa-file-excel"></i> Export Excel
-            </button>
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800"><?= $title ?></h1>
+            <p class="text-gray-600 mt-1">Laporan transaksi bahan baku masuk dan keluar</p>
         </div>
+        <div class="flex space-x-3">
+            <a href="<?= base_url('laporan/exportBahanBaku?' . $_SERVER['QUERY_STRING']) ?>" 
+               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-file-excel mr-2"></i>
+                Export Excel
+            </a>
+            <a href="<?= base_url('laporan/downloadPdfBahanBaku?' . $_SERVER['QUERY_STRING']) ?>" 
+               class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                <i class="fas fa-file-pdf mr-2"></i>
+                Download PDF
+            </a>
+        </div>
+    </div>
 
-        <!-- Filter -->
-        <div class="mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Status Stok</label>
-                    <select id="statusFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">Semua</option>
-                        <option value="low">Stok Rendah</option>
-                        <option value="normal">Stok Normal</option>
-                    </select>
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Transaksi -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-blue-600 uppercase">Total Transaksi</p>
+                    <p class="text-2xl font-bold text-gray-800 mt-2"><?= count($transaksi) ?></p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-full">
+                    <i class="fas fa-calendar text-xl text-blue-600"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Tabel -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead>
-                    <tr class="bg-gray-50">
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Part Number</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Bahan</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok Saat Ini</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minimum Stok</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terakhir Update</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <?php foreach ($items as $item): ?>
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= $item['part_number'] ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= $item['name'] ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= number_format($item['stock'], 0, ',', '.') ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= number_format($item['minimum_stock'], 0, ',', '.') ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <?php if ($item['stock'] <= $item['minimum_stock']): ?>
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Stok Rendah</span>
-                            <?php else: ?>
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Stok Normal</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <?= date('d/m/Y H:i', strtotime($item['updated_at'])) ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <!-- Total Masuk -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-green-600 uppercase">Total Masuk</p>
+                    <p class="text-2xl font-bold text-gray-800 mt-2">
+                        <?= array_reduce($transaksi, function($carry, $item) {
+                            return $carry + ($item['type'] == 'masuk' ? $item['quantity'] : 0);
+                        }, 0) ?>
+                    </p>
+                </div>
+                <div class="p-3 bg-green-100 rounded-full">
+                    <i class="fas fa-arrow-up text-xl text-green-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Keluar -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-red-600 uppercase">Total Keluar</p>
+                    <p class="text-2xl font-bold text-gray-800 mt-2">
+                        <?= array_reduce($transaksi, function($carry, $item) {
+                            return $carry + ($item['type'] == 'keluar' ? $item['quantity'] : 0);
+                        }, 0) ?>
+                    </p>
+                </div>
+                <div class="p-3 bg-red-100 rounded-full">
+                    <i class="fas fa-arrow-down text-xl text-red-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rata-rata Transaksi -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-purple-600 uppercase">Rata-rata Transaksi</p>
+                    <p class="text-2xl font-bold text-gray-800 mt-2">
+                        <?= count($transaksi) > 0 ? number_format(array_reduce($transaksi, function($carry, $item) {
+                            return $carry + $item['quantity'];
+                        }, 0) / count($transaksi), 1) : 0 ?>
+                    </p>
+                </div>
+                <div class="p-3 bg-purple-100 rounded-full">
+                    <i class="fas fa-chart-line text-xl text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="bg-white rounded-lg shadow-sm mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">
+                <i class="fas fa-filter mr-2 text-gray-600"></i>Filter Laporan
+            </h2>
+        </div>
+        <div class="p-6">
+            <form action="" method="get" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Tanggal Mulai -->
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                            </div>
+                            <input type="date" id="start_date" name="start_date" 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   value="<?= $_GET['start_date'] ?? '' ?>" required>
+                        </div>
+                    </div>
+
+                    <!-- Tanggal Akhir -->
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                            </div>
+                            <input type="date" id="end_date" name="end_date" 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   value="<?= $_GET['end_date'] ?? '' ?>" required>
+                        </div>
+                    </div>
+
+                    <!-- Jenis Transaksi -->
+                    <div>
+                        <label for="jenis" class="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-exchange-alt text-gray-400"></i>
+                            </div>
+                            <select id="jenis" name="jenis" 
+                                    class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none">
+                                <option value="">Semua Transaksi</option>
+                                <option value="masuk" <?= ($_GET['jenis'] ?? '') == 'masuk' ? 'selected' : '' ?>>Masuk</option>
+                                <option value="keluar" <?= ($_GET['jenis'] ?? '') == 'keluar' ? 'selected' : '' ?>>Keluar</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex items-end">
+                        <button type="submit" 
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            <i class="fas fa-search mr-2"></i>
+                            Terapkan Filter
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">
+                <i class="fas fa-table mr-2 text-gray-600"></i>Data Transaksi Bahan Baku
+            </h2>
+        </div>
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table id="dataTable" class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">No</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Bahan</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Penerima</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <?php $i = 1; ?>
+                        <?php foreach ($transaksi as $t) : ?>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500"><?= $i++ ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= date('d/m/Y', strtotime($t['transaction_date'])) ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= $t['nama_bahan'] ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <?php if ($t['type'] == 'masuk') : ?>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-arrow-up mr-1"></i>Masuk
+                                        </span>
+                                    <?php else : ?>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            <i class="fas fa-arrow-down mr-1"></i>Keluar
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500"><?= number_format($t['quantity'], 0, ',', '.') ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $t['unit'] ?? '-' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
+<?= $this->endSection(); ?>
+
+<?= $this->section('scripts'); ?>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const statusFilter = document.getElementById('statusFilter');
-    const tableRows = document.querySelectorAll('tbody tr');
-    
-    statusFilter.addEventListener('change', function() {
-        const selectedStatus = this.value;
-        
-        tableRows.forEach(row => {
-            const statusCell = row.querySelector('td:nth-child(5)');
-            const statusText = statusCell.textContent.trim().toLowerCase();
-            
-            if (selectedStatus === '' || 
-                (selectedStatus === 'low' && statusText === 'stok rendah') ||
-                (selectedStatus === 'normal' && statusText === 'stok normal')) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+$(document).ready(function() {
+    // Initialize DataTable with custom settings
+    $('#dataTable').DataTable({
+        pageLength: 25,
+        ordering: true,
+        info: true,
+        searching: true,
+        language: {
+            lengthMenu: "Tampilkan _MENU_ data per halaman",
+            zeroRecords: "Data tidak ditemukan",
+            info: "Menampilkan halaman _PAGE_ dari _PAGES_",
+            infoEmpty: "Tidak ada data yang tersedia",
+            infoFiltered: "(difilter dari _MAX_ total data)",
+            search: "Pencarian:",
+            paginate: {
+                first: "Pertama",
+                last: "Terakhir",
+                next: "Selanjutnya",
+                previous: "Sebelumnya"
             }
-        });
+        }
+    });
+
+    // Date range validation
+    $('#end_date').on('change', function() {
+        var startDate = $('#start_date').val();
+        var endDate = $(this).val();
+        
+        if (startDate && endDate && startDate > endDate) {
+            alert('Tanggal akhir harus lebih besar dari tanggal mulai');
+            $(this).val('');
+        }
     });
 });
-
-function exportToExcel() {
-    window.location.href = '<?= base_url('laporan/export-bahan-baku') ?>';
-}
 </script>
-
-<?= $this->include('dashboard/footer') ?> 
+<?= $this->endSection(); ?> 

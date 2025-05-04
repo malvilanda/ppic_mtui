@@ -15,19 +15,18 @@ class TransactionModel extends Model
     protected $useSoftDeletes = false;
 
     protected $allowedFields = [
-        'item_id',
+        'transaction_number',
         'type',
-        'quantity',
-        'warehouse_id',
         'client_id',
-        'delivery_address',
-        'receiver_name',
-        'receiver_phone',
-        'delivery_order',
-        'notes',
-        'created_by',
+        'client_name',
         'status',
-        'transaction_date'
+        'created_at',
+        'created_by',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'reject_reason'
     ];
 
     protected $useTimestamps = true;
@@ -35,13 +34,9 @@ class TransactionModel extends Model
     protected $updatedField = 'updated_at';
 
     protected $validationRules = [
-        'item_id' => 'required|numeric',
-        'warehouse_id' => 'required|numeric',
+        'transaction_number' => 'required',
         'type' => 'required|in_list[masuk,keluar]',
-        'quantity' => 'required|numeric|greater_than[0]',
-        'user_id' => 'required|numeric',
-        'created_by' => 'required',
-        'kategori_tabung' => 'required|in_list[A,B]'
+        'status' => 'required|in_list[pending,approve,reject]'
     ];
 
     protected $validationMessages = [
@@ -441,43 +436,23 @@ class TransactionModel extends Model
     public function getTabungTransactions()
     {
         try {
-            $builder = $this->db->table('transactions t')
-                ->select('
-                    t.id,
-                    t.transaction_date,
-                    t.type,
-                    t.quantity,
-                    t.notes,
-                    t.delivery_address,
-                    i.name as item_name,
-                    i.type as item_type,
-                    w.name as warehouse_name,
-                    t.status,
-                    IFNULL(c.name, "-") as client_name,
-                    IFNULL(c.code, "-") as client_code,
-                    t.kategori_tabung,
-                    t.delivery_order
-                ')
+            $builder = $this->db->table($this->table . ' t')
+                ->select('t.*, i.name as item_name, w.name as warehouse_name, c.name as client_name')
                 ->join('items i', 'i.id = t.item_id')
                 ->join('warehouses w', 'w.id = t.warehouse_id')
                 ->join('clients c', 'c.client_id = t.client_id', 'left')
-                ->where('i.type !=', 'bahan_baku')
-                ->orderBy('t.transaction_date', 'DESC');
+                // ->where('i.category', 'tabung')
+                ->orderBy('t.created_at', 'DESC');
 
-            // Log query untuk debugging
-            $sql = $builder->getCompiledSelect(false);
-            log_message('info', 'QUERY TRANSAKSI TABUNG: ' . $sql);
-            
             $result = $builder->get()->getResultArray();
-            
-            // Log hasil query untuk debugging
-            log_message('info', 'HASIL QUERY: ' . count($result) . ' records ditemukan');
-            
-            return $result;
 
+            // Log untuk debugging
+            log_message('debug', 'Query getTabungTransactions: ' . $this->db->getLastQuery());
+            log_message('debug', 'Result count: ' . count($result));
+
+            return $result;
         } catch (\Exception $e) {
             log_message('error', 'Error in getTabungTransactions: ' . $e->getMessage());
-            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return [];
         }
     }
