@@ -40,6 +40,47 @@ class Transaksi extends BaseController
         $this->dompdf = new Dompdf($options);
     }
 
+    public function generateDONumber()
+    {
+        try {
+            // Format: DO/TAHUN/BULAN/NOMOR_URUT
+            $year = date('Y');
+            $month = date('m');
+            
+            // Ambil nomor urut terakhir dari database untuk bulan ini
+            $lastDO = $this->db->table('transactions')
+                ->where('YEAR(created_at)', $year)
+                ->where('MONTH(created_at)', $month)
+                ->where('delivery_order IS NOT NULL')
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->getRowArray();
+
+            // Set nomor urut
+            if ($lastDO) {
+                // Ambil nomor urut dari nomor DO terakhir
+                $lastNumber = (int) substr($lastDO['delivery_order'], -4);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+
+            // Format nomor DO
+            $doNumber = sprintf("DO/%s/%s/%04d", $year, $month, $newNumber);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'do_number' => $doNumber
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function tabung()
     {
         // Load model yang diperlukan
@@ -74,6 +115,20 @@ class Transaksi extends BaseController
         ];
         
         return view('transaksi/bahan_baku', $data);
+    }
+
+    public function masuk()
+    {
+        $data = [
+            'items' => $this->itemModel->select('items_part.*, warehouses.name as warehouse_name')
+                     ->join('warehouses', 'warehouses.id = items_part.warehouse_id')
+                     ->findAll(),
+            'warehouses' => $this->warehouseModel->findAll(),
+            'units' => $this->unitModel->findAll(),
+            'transactions' => $this->transactionBahanBakuModel->getTransactions()
+        ];
+        
+        return view('transaksi/masuk', $data);
     }
 
     public function getClientAddresses($clientId)
@@ -132,14 +187,20 @@ class Transaksi extends BaseController
 
             // Validasi stok untuk transaksi keluar
             if ($data['type'] === 'keluar') {
-                $item = $this->itemModel->find($data['item_id']);
-                if (!$item) {
+                // Cek stok langsung dari tabel items
+                $currentStock = $this->db->table('items')
+                    ->select('stock')
+                    ->where('id', $data['item_id'])
+                    ->get()
+                    ->getRow();
+
+                if (!$currentStock) {
                     log_message('error', 'Item tidak ditemukan dengan ID: ' . $data['item_id']);
                     return redirect()->back()->withInput()->with('error', 'Item tidak ditemukan');
                 }
 
-                if ($item['stock'] < $data['quantity']) {
-                    log_message('error', 'Stok tidak mencukupi. Stok tersedia: ' . $item['stock'] . ', Diminta: ' . $data['quantity']);
+                if ($currentStock->stock < $data['quantity']) {
+                    log_message('error', 'Stok tidak mencukupi. Stok tersedia: ' . $currentStock->stock . ', Diminta: ' . $data['quantity']);
                     return redirect()->back()->withInput()->with('error', 'Stok tidak mencukupi untuk transaksi keluar');
                 }
 
@@ -187,35 +248,66 @@ class Transaksi extends BaseController
             // Simpan transaksi dalam database transaction
             $this->db->transStart();
 
-            // Simpan transaksi
-            $transactionId = $this->transactionModel->insert($data);
-            if (!$transactionId) {
-                log_message('error', 'Gagal menyimpan transaksi ke database');
+            try {
+                // Debug query yang akan dijalankan
+                log_message('debug', 'Mencoba menyimpan transaksi dengan data: ' . json_encode($data));
+                
+                // Simpan transaksi
+                $builder = $this->db->table('transactions');
+                $builder->insert($data);
+                $transactionId = $this->db->insertID();
+                
+                log_message('debug', 'Insert ID: ' . $transactionId);
+                log_message('debug', 'Last Query: ' . $this->db->getLastQuery());
+
+                if (!$transactionId) {
+                    log_message('error', 'Gagal menyimpan transaksi ke database. Error: ' . json_encode($this->db->error()));
+                    $this->db->transRollback();
+                    return redirect()->back()->withInput()->with('error', 'Gagal menyimpan transaksi');
+                }
+
+                // Update stok di tabel items
+                $updateQuery = "UPDATE items SET stock = CASE 
+                    WHEN ? = 'masuk' THEN stock + ?
+                    ELSE stock - ?
+                    END 
+                    WHERE id = ?";
+                
+                $updateResult = $this->db->query($updateQuery, [
+                    $data['type'],
+                    $data['quantity'],
+                    $data['quantity'],
+                    $data['item_id']
+                ]);
+
+                log_message('debug', 'Update stok query: ' . $this->db->getLastQuery());
+                
+                if (!$updateResult) {
+                    log_message('error', 'Gagal mengupdate stok. Error: ' . json_encode($this->db->error()));
+                    $this->db->transRollback();
+                    return redirect()->back()->withInput()->with('error', 'Gagal mengupdate stok');
+                }
+
+                $this->db->transComplete();
+
+                if ($this->db->transStatus() === false) {
+                    log_message('error', 'Database transaction failed. Error: ' . json_encode($this->db->error()));
+                    return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan dalam transaksi database');
+                }
+
+                // Redirect sesuai tipe transaksi
+                if ($data['type'] === 'keluar') {
+                    return redirect()->to("transaksi/delivery-order/{$transactionId}")->with('success', 'Transaksi berhasil disimpan');
+                }
+
+                return redirect()->back()->with('success', 'Transaksi berhasil disimpan');
+
+            } catch (\Exception $e) {
+                log_message('error', 'Error in saveTabung transaction: ' . $e->getMessage());
+                log_message('error', 'Stack trace: ' . $e->getTraceAsString());
                 $this->db->transRollback();
-                return redirect()->back()->withInput()->with('error', 'Gagal menyimpan transaksi');
+                return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage());
             }
-
-            // Update stok
-            $success = $this->itemModel->updateStock($data['item_id'], $data['quantity'], $data['type']);
-            if (!$success) {
-                log_message('error', 'Gagal mengupdate stok item');
-                $this->db->transRollback();
-                return redirect()->back()->withInput()->with('error', 'Gagal mengupdate stok');
-            }
-
-            $this->db->transComplete();
-
-            if ($this->db->transStatus() === false) {
-                log_message('error', 'Database transaction failed');
-                return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan dalam transaksi database');
-            }
-
-            // Redirect sesuai tipe transaksi
-            if ($data['type'] === 'keluar') {
-                return redirect()->to("transaksi/delivery-order/{$transactionId}")->with('success', 'Transaksi berhasil disimpan');
-            }
-
-            return redirect()->back()->with('success', 'Transaksi berhasil disimpan');
 
         } catch (\Exception $e) {
             log_message('error', 'Error in saveTabung: ' . $e->getMessage() . "\nStack trace: " . $e->getTraceAsString());

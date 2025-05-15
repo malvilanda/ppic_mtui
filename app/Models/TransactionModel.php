@@ -322,9 +322,9 @@ class TransactionModel extends Model
         try {
             $db = \Config\Database::connect();
             
-            // Get items first
+            // Get items data
             $itemsQuery = $db->table('items')
-                ->select('id, type, stock')
+                ->select('type, stock')
                 ->where('category', 'tabung_produksi')
                 ->get();
             
@@ -332,75 +332,40 @@ class TransactionModel extends Model
             
             // Initialize summary with default values
             $summary = [
-                '3kg' => [
-                    'total_masuk' => 0,
-                    'total_keluar' => 0,
-                    'current_stock' => 0,
-                    'sisa_stok' => 0
-                ],
-                '12kg' => [
-                    'total_masuk' => 0,
-                    'total_keluar' => 0,
-                    'current_stock' => 0,
-                    'sisa_stok' => 0
-                ],
-                '15kg' => [
-                    'total_masuk' => 0,
-                    'total_keluar' => 0,
-                    'current_stock' => 0,
-                    'sisa_stok' => 0
-                ],
-                '5kg' => [
-                    'total_masuk' => 0,
-                    'total_keluar' => 0,
-                    'current_stock' => 0,
-                    'sisa_stok' => 0
-                ]
+                '3kg' => ['stock' => 0, 'total_keluar' => 0],
+                '12kg' => ['stock' => 0, 'total_keluar' => 0],
+                '15kg' => ['stock' => 0, 'total_keluar' => 0],
+                '5kg' => ['stock' => 0, 'total_keluar' => 0]
             ];
             
-            // Set current stock from items
+            // Set stock from items
             foreach ($items as $item) {
                 $type = str_replace('tabung_', '', $item['type']);
                 if (isset($summary[$type])) {
-                    $summary[$type]['current_stock'] = (int)$item['stock'];
-                    $summary[$type]['sisa_stok'] = (int)$item['stock'];
+                    $summary[$type]['stock'] = (int)$item['stock'];
                 }
             }
-            
-            // Get transactions for this month
-            $currentMonth = date('m');
+
+            // Get total keluar for current year
             $currentYear = date('Y');
             
-            $transQuery = $db->table('transactions t')
-                ->select('
-                    i.type as item_type,
-                    t.type as trans_type,
-                    SUM(t.quantity) as total_quantity
-                ')
+            $keluarQuery = $db->table('transactions t')
+                ->select('i.type, SUM(t.quantity) as total_keluar')
                 ->join('items i', 'i.id = t.item_id')
                 ->where('i.category', 'tabung_produksi')
-                ->where("MONTH(t.transaction_date) = $currentMonth")
-                ->where("YEAR(t.transaction_date) = $currentYear")
-                ->groupBy('i.type, t.type')
+                ->where('t.type', 'keluar')
+                ->where("YEAR(t.transaction_date)", $currentYear)
+                ->groupBy('i.type')
                 ->get();
             
-            $transactions = $transQuery->getResultArray();
+            $keluarData = $keluarQuery->getResultArray();
             
-            // Calculate totals from transactions
-            foreach ($transactions as $trans) {
-                $type = str_replace('tabung_', '', $trans['item_type']);
+            // Set total keluar
+            foreach ($keluarData as $keluar) {
+                $type = str_replace('tabung_', '', $keluar['type']);
                 if (isset($summary[$type])) {
-                    if ($trans['trans_type'] === 'masuk') {
-                        $summary[$type]['total_masuk'] = (int)$trans['total_quantity'];
-                    } else if ($trans['trans_type'] === 'keluar') {
-                        $summary[$type]['total_keluar'] = (int)$trans['total_quantity'];
-                    }
+                    $summary[$type]['total_keluar'] = (int)$keluar['total_keluar'];
                 }
-            }
-            
-            // Calculate final sisa stok
-            foreach ($summary as $type => $data) {
-                $summary[$type]['sisa_stok'] = $data['current_stock'] - $data['total_keluar'];
             }
 
             return $summary;
@@ -409,8 +374,10 @@ class TransactionModel extends Model
             log_message('error', 'Error in getTabungSummary: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return [
-                '3kg' => ['total_masuk' => 0, 'total_keluar' => 0, 'current_stock' => 0, 'sisa_stok' => 0],
-                '12kg' => ['total_masuk' => 0, 'total_keluar' => 0, 'current_stock' => 0, 'sisa_stok' => 0]
+                '3kg' => ['stock' => 0, 'total_keluar' => 0],
+                '12kg' => ['stock' => 0, 'total_keluar' => 0],
+                '15kg' => ['stock' => 0, 'total_keluar' => 0],
+                '5kg' => ['stock' => 0, 'total_keluar' => 0]
             ];
         }
     }

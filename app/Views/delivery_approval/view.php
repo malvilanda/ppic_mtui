@@ -194,7 +194,7 @@ function submitApproval(event) {
     const form = event.target;
     const notes = form.querySelector('textarea[name="notes"]').value;
 
-    fetch(`/delivery-approval/approve/${currentApprovalId}`, {
+    fetch(`/approval/delivery/approve/${currentApprovalId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ function submitReject(event) {
         return;
     }
 
-    fetch(`/delivery-approval/reject/${currentApprovalId}`, {
+    fetch(`/approval/delivery/reject/${currentApprovalId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

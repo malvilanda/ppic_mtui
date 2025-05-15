@@ -6,15 +6,16 @@ use CodeIgniter\Model;
 
 class ItemModel extends Model
 {
-    protected $table = 'items_part';
-    protected $table2 = 'items';
+    protected $table = 'items_part';  // Tabel utama untuk transaksi tabung
+    protected $table2 = 'items';  // Tabel untuk bahan baku
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
     protected $allowedFields = [
         'id',
-        'part_number',
         'name',
+        'type',
+        'category',
         'stock',
         'minimum_stock',
         'updated_at',
@@ -303,71 +304,70 @@ class ItemModel extends Model
 
     public function getStokByJenis($jenis)
     {
-        $builder = $this->db->table($this->table);
-        return $builder->where('name LIKE', '%' . $jenis . 'kg%')
-                      ->select('SUM(stock) as total_stok')
+        $builder = $this->db->table($this->table2);  // Gunakan $this->table yang sudah benar
+        return $builder->where('type', 'tabung_' . $jenis)
+                      ->select('stock as total_stok')
                       ->get()
                       ->getRow()
                       ->total_stok ?? 0;
     }
 
     public function getLaporanTabung()
-{
-    $builder = $this->db->table($this->table2 . ' k');
-    
-    // Get current month and year
-    $currentMonth = date('m');
-    $currentYear = date('Y');
-    
-    $builder->select('
-        k.*, 
-        COALESCE(b.totalKeluar, 0) AS totalKeluar,
-        COALESCE(m.totalMasuk, 0) AS totalMasuk,
-        CASE 
-            WHEN MONTH(k.updated_at) = ' . $currentMonth . ' 
-            AND YEAR(k.updated_at) = ' . $currentYear . ' 
-            THEN "Ya" 
-            ELSE "Tidak" 
-        END as update_bulan_ini,
-        CASE 
-            WHEN YEAR(k.updated_at) = ' . $currentYear . ' 
-            THEN "Ya" 
-            ELSE "Tidak" 
-        END as update_tahun_ini
-    ')
-    ->where('k.name LIKE', '%kg%')
-    ->join('(
-        SELECT 
-            item_id, 
-            SUM(quantity) AS totalKeluar 
-        FROM 
-            transactions 
-        WHERE 
-            type = "keluar" 
-        GROUP BY 
-            item_id
-    ) AS b', 'k.id = b.item_id', 'left')
-    ->join('(
-        SELECT 
-            item_id, 
-            SUM(quantity) AS totalMasuk 
-        FROM 
-            transactions 
-        WHERE 
-            type = "masuk" 
-        GROUP BY 
-            item_id
-    ) AS m', 'k.id = m.item_id', 'left')
-    ->orderBy('k.name', 'ASC');
-    
-    $query = $builder->get();
-    
-    // Log query untuk debugging
-    log_message('debug', 'Last Query: ' . $this->db->getLastQuery());
-    
-    return $query->getResultArray();
-}
-
+    {
+        $builder = $this->db->table('items k');  // Gunakan tabel items langsung
+        
+        // Get current month and year
+        $currentMonth = date('m');
+        $currentYear = date('Y');
+        
+        $builder->select('
+            k.*, 
+            COALESCE(b.totalKeluar, 0) AS totalKeluar,
+            COALESCE(m.totalMasuk, 0) AS totalMasuk,
+            CASE 
+                WHEN MONTH(k.updated_at) = ' . $currentMonth . ' 
+                AND YEAR(k.updated_at) = ' . $currentYear . ' 
+                THEN "Ya" 
+                ELSE "Tidak" 
+            END as update_bulan_ini,
+            CASE 
+                WHEN YEAR(k.updated_at) = ' . $currentYear . ' 
+                THEN "Ya" 
+                ELSE "Tidak" 
+            END as update_tahun_ini
+        ')
+        ->where('k.category', 'tabung_produksi')  // Filter untuk tabung saja
+        ->join('(
+            SELECT 
+                item_id, 
+                SUM(quantity) AS totalKeluar 
+            FROM 
+                transactions 
+            WHERE 
+                type = "keluar" 
+            GROUP BY 
+                item_id
+        ) AS b', 'k.id = b.item_id', 'left')
+        ->join('(
+            SELECT 
+                item_id, 
+                SUM(quantity) AS totalMasuk 
+            FROM 
+                transactions 
+            WHERE 
+                type = "masuk" 
+            GROUP BY 
+                item_id
+        ) AS m', 'k.id = m.item_id', 'left')
+        ->orderBy('k.name', 'ASC');
+        
+        $query = $builder->get();
+        
+        // Log query untuk debugging
+        log_message('debug', 'Last Query: ' . $this->db->getLastQuery());
+        
+        return $query->getResultArray();
+    }
 
     // Method untuk laporan bahan baku
     public function getLaporanBahanBaku()

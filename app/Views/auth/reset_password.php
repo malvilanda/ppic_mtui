@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PPIC - PT. MTU Indonesia</title>
+    <title>Reset Password - PPIC PT. MTU Indonesia</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -26,9 +26,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom JavaScript -->
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleIcon = document.getElementById('togglePassword');
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.getElementById(iconId);
             
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -53,11 +53,11 @@
                      class="h-16 mx-auto"
                      onerror="this.outerHTML='<div class=\'bg-primary text-white text-xl font-bold py-4 px-6 rounded-lg mx-auto mb-4 text-center\'>PT. MTU Indonesia</div>'">
                 
-                <h1 class="text-2xl font-bold text-gray-800 tracking-tight">PPIC System</h1>
-                <p class="text-gray-500 text-sm">Production Planning & Inventory Control</p>
+                <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Reset Password</h1>
+                <p class="text-gray-500 text-sm">Masukkan password baru Anda</p>
             </div>
 
-            <!-- Alert Error -->
+            <!-- Alert Messages -->
             <?php if (session()->getFlashdata('error')) : ?>
                 <div class="bg-red-50 text-red-700 p-4 rounded-lg flex items-center space-x-2">
                     <i class="fas fa-exclamation-circle"></i>
@@ -65,23 +65,11 @@
                 </div>
             <?php endif; ?>
 
-            <!-- Login Form -->
-            <form action="<?= base_url('auth/authenticate') ?>" method="post" class="space-y-6">
-                <!-- Username Input -->
-                <div class="space-y-2">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-user text-gray-400"></i>
-                        </div>
-                        <input type="text" 
-                               id="username" 
-                               name="username" 
-                               required
-                               class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 bg-gray-50 focus:bg-white"
-                               placeholder="Username">
-                    </div>
-                </div>
-
+            <!-- Reset Password Form -->
+            <form action="<?= base_url('auth/updatePassword') ?>" method="post" class="space-y-6">
+                <?= csrf_field() ?>
+                <input type="hidden" name="token" value="<?= $token ?>">
+                
                 <!-- Password Input -->
                 <div class="space-y-2">
                     <div class="relative">
@@ -93,9 +81,9 @@
                                name="password" 
                                required
                                class="block w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 bg-gray-50 focus:bg-white"
-                               placeholder="Password">
+                               placeholder="Password Baru">
                         <button type="button" 
-                                onclick="togglePassword()"
+                                onclick="togglePassword('password', 'togglePassword')"
                                 class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
                             <i id="togglePassword" 
                                class="fas fa-eye text-gray-400 hover:text-primary transition-colors duration-200"></i>
@@ -103,27 +91,42 @@
                     </div>
                 </div>
 
-                <!-- Remember & Forgot -->
-                <div class="flex items-center justify-between">
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" 
-                               id="remember" 
-                               name="remember"
-                               value="1"
-                               class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary">
-                        <span class="text-sm text-gray-600">Remember me</span>
-                    </label>
-                    <a href="<?= base_url('auth/forgotPassword') ?>" class="text-sm text-primary hover:text-secondary transition-colors duration-200">
-                        Forgot password?
-                    </a>
+                <!-- Confirm Password Input -->
+                <div class="space-y-2">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input type="password" 
+                               id="password_confirm" 
+                               name="password_confirm" 
+                               required
+                               class="block w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-200 bg-gray-50 focus:bg-white"
+                               placeholder="Konfirmasi Password">
+                        <button type="button" 
+                                onclick="togglePassword('password_confirm', 'togglePasswordConfirm')"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+                            <i id="togglePasswordConfirm" 
+                               class="fas fa-eye text-gray-400 hover:text-primary transition-colors duration-200"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Login Button -->
+                <!-- Submit Button -->
                 <button type="submit" 
                         class="w-full bg-primary hover:bg-secondary text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-lg">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span>Sign In</span>
+                    <i class="fas fa-key"></i>
+                    <span>Reset Password</span>
                 </button>
+
+                <!-- Back to Login -->
+                <div class="text-center">
+                    <a href="<?= base_url('auth/login') ?>" 
+                       class="text-sm text-primary hover:text-secondary transition-colors duration-200">
+                        <i class="fas fa-arrow-left mr-1"></i>
+                        Kembali ke Login
+                    </a>
+                </div>
             </form>
 
             <!-- Footer -->

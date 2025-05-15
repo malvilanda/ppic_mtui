@@ -57,7 +57,7 @@ class ClientModel extends Model
      */
     public function generateCode()
     {
-        $lastClient = $this->orderBy('id', 'DESC')->first();
+        $lastClient = $this->orderBy('client_id', 'DESC')->first();
         
         if (!$lastClient) {
             return 'CLT001';

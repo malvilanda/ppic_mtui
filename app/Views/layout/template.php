@@ -251,18 +251,23 @@
                                     </svg>
                                 </button>
                                 <div class="nav-dropdown-content absolute z-10 mt-0 w-48 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5" id="transaksi-menu">
-                                    <a href="<?= base_url('transaksi/bahan-baku') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-box mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Bahan Baku
-                                    </a>
                                     <a href="<?= base_url('transaksi/tabung') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-flask mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Tabung
+                                        <i class="fas fa-arrow-right mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Transaksi Tabung
                                     </a>
-                                    <a href="<?= base_url('approval/transaksi') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                        <i class="fas fa-check-circle mr-3 text-gray-400 group-hover:text-blue-500"></i>
-                                        Persetujuan
+                                    <a href="<?= base_url('transaksi/bahan_baku') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-arrow-left mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Transaksi Bahan Baku
                                     </a>
+                                    <div class="border-t border-gray-100 my-1"></div>
+                                    <a href="<?= base_url('approval/delivery') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-clipboard-check mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Persetujuan Surat Jalan
+                                    </a>
+                                    <!-- <a href="<?= base_url('approval/transaksi') ?>" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                        <i class="fas fa-check-double mr-3 text-gray-400 group-hover:text-blue-500"></i>
+                                        Persetujuan Transaksi
+                                    </a> -->
                                 </div>
                             </div>
                         </div>
@@ -459,7 +464,7 @@
                 </div>
 
                 <!-- Delivery Order Mobile -->
-                <div class="mobile-dropdown">
+                <!-- <div class="mobile-dropdown">
                     <button class="w-full text-left <?= strpos(current_url(), base_url('delivery-order')) === 0 ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900' ?> flex items-center justify-between pl-3 pr-4 py-2 border-l-4 text-base font-medium" data-target="delivery-order-mobile-menu">
                         <div class="flex items-center">
                             <i class="fas fa-truck mr-2"></i>
@@ -479,7 +484,7 @@
                             Buat Surat Jalan
                         </a>
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Master Data Mobile -->
                 <div class="mobile-dropdown">
@@ -656,6 +661,32 @@
                     });
                 });
             }
+        });
+
+        // Mobile dropdowns
+        document.querySelectorAll('.mobile-dropdown button').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-target');
+                const targetMenu = document.getElementById(targetId);
+                
+                if (targetMenu) {
+                    // Toggle current menu
+                    targetMenu.classList.toggle('hidden');
+                    
+                    // Close other mobile menus
+                    document.querySelectorAll('.mobile-dropdown > div').forEach(menu => {
+                        if (menu.id !== targetId) {
+                            menu.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Toggle arrow rotation
+                    const arrow = button.querySelector('svg');
+                    if (arrow) {
+                        arrow.classList.toggle('rotate-180');
+                    }
+                }
+            });
         });
     </script>
 

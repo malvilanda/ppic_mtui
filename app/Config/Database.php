@@ -26,9 +26,9 @@ class Database extends Config
      */
     public array $default = [
         'DSN'          => '',
-        'hostname'     => 'localhost',
-        'username'     => 'root',
-        'password'     => '',  // Sesuaikan dengan password MySQL Anda
+        'hostname'     => '127.0.0.1',
+        'username'     => 'erik',
+        'password'     => 'erik123',  // Sesuaikan dengan password MySQL Anda
         'database'     => 'ppic_app',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
@@ -41,7 +41,7 @@ class Database extends Config
         'compress'     => false,
         'strictOn'     => false,
         'failover'     => [],
-        'port'         => 3306,
+        'port'         => 3307,
         'socket'       => '',  // Tambahkan ini jika menggunakan socket
         'persistent'   => false,
         'options'      => [

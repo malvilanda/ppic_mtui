@@ -8,6 +8,7 @@ use App\Models\WarehouseModel;
 use App\Models\OpnameBahanModel;
 use App\Models\BahanBakuModel;
 use App\Models\TransactionBahanBakuModel;
+use CodeIgniter\Controller;
 
 class Stok extends BaseController
 {
@@ -18,6 +19,7 @@ class Stok extends BaseController
     protected $bahanBakuModel;
     protected $transactionBahanBakuModel;
     protected $table_tabung = 'items';
+    protected $table_bahan = 'items_part';
 
     public function __construct()
     {
@@ -229,5 +231,76 @@ class Stok extends BaseController
         $this->opnameBahanModel->delete($id);
         session()->setFlashdata('pesan', 'Data opname berhasil dihapus.');
         return redirect()->to('/stok/opname_bahan_baku');
+    }
+
+    public function getStokData()
+    {
+        try {
+            // Ambil data tabung langsung dari tabel items
+            $tabung = $this->itemModel->db->table($this->table_tabung)
+                ->select('id, name, type, stock as sisa_stok, minimum_stock')
+                ->where('category', 'tabung_produksi')
+                ->orderBy('FIELD(type, "tabung_3kg", "tabung_5kg", "tabung_12kg", "tabung_15kg")', '')
+                ->get()
+                ->getResultArray();
+
+            // Format data tabung sesuai dengan tipe
+            $formatted_tabung = [];
+            foreach ($tabung as $item) {
+                $type = str_replace('tabung_', '', $item['type']); // Hapus prefix 'tabung_'
+                $formatted_tabung[$type] = [
+                    'id' => $item['id'],
+                    'name' => $item['name'],
+                    'sisa_stok' => (int)$item['sisa_stok'],
+                    'minimum_stock' => (int)$item['minimum_stock']
+                ];
+            }
+
+            // Ambil data bahan baku
+            $bahan_baku = $this->itemModel->db->table($this->table_bahan)
+                ->select('id, part_number, name, stock as sisa_stok, minimum_stock')
+                ->orderBy('name', 'asc')
+                ->get()
+                ->getResultArray();
+
+            // Kelompokkan bahan baku berdasarkan kategori
+            $grouped_bahan_baku = [];
+            foreach ($bahan_baku as $item) {
+                $category = $this->getCategoryFromName($item['name']);
+                if (!isset($grouped_bahan_baku[$category])) {
+                    $grouped_bahan_baku[$category] = [];
+                }
+                $grouped_bahan_baku[$category][] = [
+                    'id' => $item['id'],
+                    'part_number' => $item['part_number'],
+                    'name' => $item['name'],
+                    'sisa_stok' => (int)$item['sisa_stok'],
+                    'minimum_stock' => (int)$item['minimum_stock']
+                ];
+            }
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data' => [
+                    'tabung' => $formatted_tabung,
+                    'bahan_baku' => $grouped_bahan_baku
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ])->setStatusCode(500);
+        }
+    }
+
+    private function getCategoryFromName($name)
+    {
+        $name = strtolower($name);
+        if (strpos($name, 'valve') !== false) return 'Valve';
+        if (strpos($name, 'cat') !== false) return 'Cat';
+        if (strpos($name, 'seal') !== false) return 'Seal';
+        if (strpos($name, 'ring') !== false) return 'Ring';
+        return 'Lainnya';
     }
 } 

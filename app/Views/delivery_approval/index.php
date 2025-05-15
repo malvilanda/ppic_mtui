@@ -26,7 +26,7 @@
                     <?php foreach ($pending_approvals as $approval): ?>
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                            <a href="<?= base_url('delivery-approval/view/' . $approval['id']) ?>" class="hover:underline">
+                            <a href="<?= base_url('approval/view/' . $approval['id']) ?>" class="hover:underline">
                                 <?= $approval['delivery_order'] ?>
                             </a>
                         </td>
@@ -47,6 +47,10 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
+                                <a href="<?= base_url('approval/view/' . $approval['id']) ?>" 
+                                   class="text-blue-600 hover:text-blue-900">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                                 <button onclick="showApprovalModal(<?= $approval['id'] ?>)" 
                                         class="text-green-600 hover:text-green-900">
                                     <i class="fas fa-check"></i>
@@ -91,7 +95,7 @@
                     <?php foreach ($approval_history as $approval): ?>
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                            <a href="<?= base_url('delivery-approval/view/' . $approval['id']) ?>" class="hover:underline">
+                            <a href="<?= base_url('approval/view/' . $approval['id']) ?>" class="hover:underline">
                                 <?= $approval['delivery_order'] ?>
                             </a>
                         </td>

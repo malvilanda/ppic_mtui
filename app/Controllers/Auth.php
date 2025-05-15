@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\UserModel;
 use App\Models\LoginLogModel;
+use App\Models\PasswordResetModel;
 use CodeIgniter\Controller;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -13,7 +14,9 @@ class Auth extends BaseController
 {
     protected $userModel;
     protected $loginLogModel;
+    protected $passwordResetModel;
     protected $session;
+    protected $email;
 
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
     {
@@ -21,6 +24,8 @@ class Auth extends BaseController
         
         $this->userModel = new UserModel();
         $this->loginLogModel = new LoginLogModel();
+        $this->passwordResetModel = new PasswordResetModel();
+        $this->email = \Config\Services::email();
         
         // Konfigurasi session timeout (1 jam = 3600 detik)
         $this->session = session();
@@ -168,6 +173,7 @@ class Auth extends BaseController
         $request = service('request');
         $username = esc($request->getPost('username'));
         $password = $request->getPost('password');
+        $remember = $request->getPost('remember');
 
         // Tambahan keamanan dengan rate limiting
         $throttler = \Config\Services::throttler();
@@ -192,6 +198,30 @@ class Auth extends BaseController
                 'last_activity' => time()
             ];
             session()->set($sessionData);
+
+            // Handle Remember Me
+            if ($remember == '1') {
+                // Generate random string untuk token
+                $token = bin2hex(random_bytes(32));
+                
+                // Simpan token di database
+                $this->userModel->update($user['id'], [
+                    'remember_token' => $token,
+                    'remember_token_expires_at' => date('Y-m-d H:i:s', strtotime('+30 days'))
+                ]);
+                
+                // Set cookie yang akan expired dalam 30 hari
+                $response = service('response');
+                $response->setCookie([
+                    'name' => 'remember_token',
+                    'value' => $token,
+                    'expire' => 2592000, // 30 hari dalam detik
+                    'path' => '/',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]);
+            }
 
             // Dapatkan informasi MAC address dan lokasi
             $macAddress = $this->getMacAddress();
@@ -231,13 +261,75 @@ class Auth extends BaseController
         // Catat logout di log
         if (session()->get('user_id')) {
             $this->loginLogModel->logLogout(session()->get('user_id'));
+            
+            // Hapus remember token dari database
+            $this->userModel->update(session()->get('user_id'), [
+                'remember_token' => null,
+                'remember_token_expires_at' => null
+            ]);
         }
+        
+        // Hapus cookie remember me
+        $response = service('response');
+        $response->deleteCookie('remember_token');
         
         // Hapus data session
         session()->destroy();
 
         return redirect()->to('login')
             ->with('success', 'Anda telah berhasil logout');
+    }
+
+    public function checkRememberMe()
+    {
+        $request = service('request');
+        $token = $request->getCookie('remember_token');
+
+        if ($token) {
+            // Cari user dengan token yang valid
+            $user = $this->userModel->where([
+                'remember_token' => $token,
+                'remember_token_expires_at >=' => date('Y-m-d H:i:s')
+            ])->first();
+
+            if ($user) {
+                // Set session data
+                $sessionData = [
+                    'user_id' => $user['id'],
+                    'username' => $user['username'],
+                    'name' => $user['name'],
+                    'role' => $user['role'],
+                    'logged_in' => true,
+                    'last_activity' => time()
+                ];
+                session()->set($sessionData);
+
+                // Generate token baru untuk keamanan
+                $newToken = bin2hex(random_bytes(32));
+                
+                // Update token di database
+                $this->userModel->update($user['id'], [
+                    'remember_token' => $newToken,
+                    'remember_token_expires_at' => date('Y-m-d H:i:s', strtotime('+30 days'))
+                ]);
+
+                // Update cookie dengan token baru
+                $response = service('response');
+                $response->setCookie([
+                    'name' => 'remember_token',
+                    'value' => $newToken,
+                    'expire' => 2592000,
+                    'path' => '/',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function loginHistory()
@@ -259,5 +351,143 @@ class Auth extends BaseController
         ];
 
         return view('auth/login_history', $data);
+    }
+
+    public function forgotPassword()
+    {
+        return view('auth/forgot_password');
+    }
+
+    public function sendResetLink()
+    {
+        // Validasi input
+        $rules = [
+            'email' => 'required'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Email/Username tidak valid');
+        }
+
+        $input = $this->request->getPost('email');
+        
+        // Cek apakah email/username ada di database
+        $user = $this->userModel->where('username', $input)
+                               ->orWhere('email', $input)
+                               ->first();
+        
+        if (!$user) {
+            return redirect()->back()
+                ->with('error', 'Email/Username tidak ditemukan');
+        }
+
+        try {
+            // Generate token dan simpan di database
+            $token = $this->passwordResetModel->createToken($user['username']);
+            
+            // Debug info
+            log_message('info', 'Attempting to send email to: ' . $user['email']);
+            
+            // Konfigurasi email
+            $this->email->setFrom('erik.malvilanda@gmail.com', 'PPIC System');
+            $this->email->setTo($user['email']);
+            $this->email->setSubject('Reset Password PPIC System');
+            
+            $message = view('emails/reset_password', [
+                'resetLink' => base_url("auth/resetPassword/{$token}"),
+                'name' => $user['name']
+            ]);
+            
+            $this->email->setMessage($message);
+            
+            // Debug info
+            log_message('info', 'Email configuration: ' . print_r($this->email, true));
+            
+            if ($this->email->send(false)) { // false untuk mendapatkan error details
+                return redirect()->back()
+                    ->with('success', 'Link reset password telah dikirim ke email Anda');
+            } else {
+                $error = $this->email->printDebugger(['headers', 'subject', 'body']);
+                log_message('error', 'Email send error: ' . print_r($error, true));
+                return redirect()->back()
+                    ->with('error', 'Gagal mengirim email. Error: ' . $error);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error in sendResetLink: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function resetPassword($token = null)
+    {
+        if (!$token) {
+            return redirect()->to('auth/login')
+                ->with('error', 'Token tidak valid');
+        }
+
+        // Cek token di database
+        $reset = $this->passwordResetModel->verifyToken($token);
+        
+        if (!$reset) {
+            return redirect()->to('auth/login')
+                ->with('error', 'Token tidak valid atau sudah kadaluarsa');
+        }
+
+        return view('auth/reset_password', ['token' => $token]);
+    }
+
+    public function updatePassword()
+    {
+        // Validasi input
+        $rules = [
+            'token' => 'required',
+            'password' => 'required|min_length[6]',
+            'password_confirm' => 'required|matches[password]'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Password tidak valid atau tidak cocok');
+        }
+
+        $token = $this->request->getPost('token');
+        $password = $this->request->getPost('password');
+
+        // Cek token
+        $reset = $this->passwordResetModel->verifyToken($token);
+        
+        if (!$reset) {
+            return redirect()->to('auth/login')
+                ->with('error', 'Token tidak valid atau sudah kadaluarsa');
+        }
+
+        try {
+            // Update password user
+            $user = $this->userModel->where('username', $reset['username'])->first();
+            
+            if (!$user) {
+                throw new \Exception('User tidak ditemukan');
+            }
+
+            // Update password
+            $this->userModel->update($user['id'], [
+                'password' => password_hash($password, PASSWORD_BCRYPT)
+            ]);
+
+            // Hapus token reset password
+            $this->passwordResetModel->deleteToken($token);
+
+            return redirect()->to('auth/login')
+                ->with('success', 'Password berhasil direset. Silakan login dengan password baru Anda');
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in updatePassword: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan. Silakan coba lagi nanti');
+        }
     }
 } 

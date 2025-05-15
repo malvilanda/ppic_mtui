@@ -2,8 +2,6 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<script src="https://kit.fontawesome.com/your-kit-code.js" crossorigin="anonymous"></script>
-
 <style>
 .transition-section {
     transition: all 0.3s ease-in-out;
@@ -40,7 +38,9 @@
                     <select name="item_id" id="itemSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                         <option value="">Pilih Jenis Tabung</option>
                         <?php foreach ($items as $item): ?>
-                            <option value="<?= $item['id'] ?>" data-stock="<?= $item['stock'] ?>"><?= $item['name'] ?> (Stok: <?= $item['stock'] ?>)</option>
+                            <option value="<?= $item['id'] ?>" data-stock="<?= $item['stock'] ?>">
+                                <?= $item['name'] ?> (Stok: <?= $item['stock'] ?>)
+                            </option>
                         <?php endforeach; ?>
                     </select>
                     <p id="stockWarning" class="hidden mt-2 text-sm text-red-600">Stok tidak mencukupi untuk transaksi keluar</p>
@@ -342,16 +342,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to check stock availability
     function checkStock() {
         if (transactionType.value === 'keluar' && itemSelect.value) {
-            const selectedOption = itemSelect.options[itemSelect.selectedIndex];
-            const currentStock = parseInt(selectedOption.dataset.stock);
+            const selectedItem = itemSelect.options[itemSelect.selectedIndex];
+            const currentStock = parseInt(selectedItem.dataset.stock) || 0;
             const quantity = parseInt(quantityInput.value) || 0;
+            
+            // Debug info
+            console.log('Stock Check Debug:', {
+                itemId: selectedItem.value,
+                itemName: selectedItem.text,
+                currentStock: currentStock,
+                requestedQuantity: quantity,
+                isExceeding: quantity > currentStock
+            });
             
             if (quantity > currentStock) {
                 stockWarning.classList.remove('hidden');
+                stockWarning.textContent = `Stok tidak mencukupi. Stok tersedia: ${currentStock}`;
+                quantityInput.classList.add('border-red-500');
                 return false;
             }
         }
         stockWarning.classList.add('hidden');
+        quantityInput.classList.remove('border-red-500');
         return true;
     }
 

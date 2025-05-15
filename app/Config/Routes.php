@@ -36,6 +36,8 @@ $routes->group('transaksi', ['filter' => 'auth'], function($routes) {
     $routes->get('generate-do-number', 'Transaksi::generateDONumber');
     $routes->get('check-part-number/(:num)/(:num)', 'Transaksi::checkPartNumber/$1/$2');
     $routes->get('bahan-baku/list', 'Transaksi::getTransaksiBahanBaku');
+    $routes->get('masuk', 'Transaksi::masuk');
+    $routes->get('keluar', 'Transaksi::keluar');
 });
 
 // Stok routes (require authentication)
@@ -47,13 +49,18 @@ $routes->group('stok', ['filter' => 'auth'], function($routes) {
     $routes->get('opname/tabung', 'Stok::opnameTabung');
     $routes->get('opname/bahan-baku', 'Stok::opnameBahanBaku');
     $routes->post('opname/save', 'Stok::saveOpname');
+    $routes->get('data', 'Stok::getStokData');
 });
 
 // Auth Routes
 $routes->group('auth', ['namespace' => 'App\\Controllers'], function($routes) {
     $routes->get('login', 'Auth::login');
-    $routes->post('login', 'Auth::attemptLogin');
+    $routes->post('authenticate', 'Auth::authenticate');
     $routes->get('logout', 'Auth::logout');
+    $routes->get('forgotPassword', 'Auth::forgotPassword');
+    $routes->post('sendResetLink', 'Auth::sendResetLink');
+    $routes->get('resetPassword/(:any)', 'Auth::resetPassword/$1');
+    $routes->post('updatePassword', 'Auth::updatePassword');
     $routes->get('users', 'Auth::users');
     $routes->get('login-history', 'Auth::loginHistory');
     $routes->get('login-history/(:num)', 'Auth::loginHistory/$1');
@@ -85,6 +92,7 @@ $routes->group('master', ['filter' => 'auth'], function($routes) {
     $routes->get('tabung', 'Master::tabung');
     $routes->get('bahan-baku', 'Master::bahanBaku');
     $routes->post('tabung/store', 'Master::storeTabung');
+    $routes->post('tabung/update', 'Master::updateTabung');
     $routes->post('bahan-baku/store', 'Master::storeBahanBaku');
     $routes->post('store-items-part', 'Master::storeItemsPart');
     $routes->get('items-part/delete/(:num)', 'Master::deleteItemsPart/$1');
@@ -105,9 +113,9 @@ $routes->group('laporan', ['filter' => 'auth'], function($routes) {
 
 // Administrator routes (require authentication and role)
 $routes->group('administrator', ['filter' => ['auth', 'role:admin,supervisor,manager']], function($routes) {
-    $routes->get('users', 'Administrator::users');
-    $routes->get('users/add', 'Administrator::add_user');
-    $routes->post('users/save', 'Administrator::save_user');
+    $routes->get('users', 'Administrator\Users::index');
+    $routes->get('users/add', 'Administrator\Users::add');
+    $routes->post('users/save', 'Administrator\Users::save');
     $routes->get('user-history', 'Administrator::userHistory');
     $routes->get('user-history/export', 'Administrator::exportUserHistory');
 });
@@ -126,12 +134,13 @@ $routes->group('delivery-order', ['filter' => 'auth'], function($routes) {
 // Approval routes (require authentication)
 $routes->group('approval', ['filter' => 'auth'], function($routes) {
     $routes->get('delivery', 'Approval::delivery');
-    $routes->get('delivery/view/(:num)', 'Approval::view/$1');
+    $routes->get('view/(:num)', 'Approval::view/$1');
     $routes->post('delivery/approve/(:num)', 'Approval::approve/$1');
     $routes->post('delivery/reject/(:num)', 'Approval::reject/$1');
 });
 
 $routes->get('transaksi/tabung', 'Transaksi::tabung');
+$routes->get('transaksi/masuk', 'Transaksi::masuk');
 $routes->get('approval/transaksi', 'Approval::transaksi');
 $routes->post('approval/approve', 'Approval::approve');
 $routes->post('approval/reject', 'Approval::reject');

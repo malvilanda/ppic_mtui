@@ -162,4 +162,33 @@ class Master extends BaseController
 
         return redirect()->to('master/bahan-baku');
     }
+
+    public function updateTabung()
+    {
+        $id = $this->request->getPost('id');
+        $type = $this->itemTypeModel->find($id);
+        
+        if (empty($type)) {
+            return redirect()->back()->with('error', 'Jenis tabung tidak ditemukan');
+        }
+
+        $rules = [
+            'name' => 'required|min_length[3]',
+            'code' => 'required|is_unique[item_types.code,id,' . $id . ']',
+            'description' => 'permit_empty'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $data = [
+            'name' => $this->request->getPost('name'),
+            'code' => $this->request->getPost('code'),
+            'description' => $this->request->getPost('description')
+        ];
+
+        $this->itemTypeModel->update($id, $data);
+        return redirect()->to('master/tabung')->with('success', 'Jenis tabung berhasil diperbarui');
+    }
 } 
